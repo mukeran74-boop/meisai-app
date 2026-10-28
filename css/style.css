@@ -1,0 +1,188 @@
+/* =========================================================
+   作り方のルール
+   ・色はすべてここのCSS変数(--〇〇)にまとめる
+     → ライト用とダーク用の2組を用意し、切り替えるだけでダークモードになる
+   ・文字の大きさは rem で書く(あとで文字サイズ設定を足しやすくするため)
+   ========================================================= */
+
+/* ---------- ライトモードの色 ---------- */
+:root {
+  --bg: #f4f3ef;           /* 画面の背景 */
+  --surface: #ffffff;      /* カードなどの背景 */
+  --text: #1f1e1c;         /* 本文の文字 */
+  --text-sub: #6b6a66;     /* 補足の文字 */
+  --border: #dddbd3;       /* 線 */
+  --accent: #185fa5;       /* 選択中のタブ・ボタン */
+  --accent-bg: #e6f1fb;    /* 選択中のボタンの背景 */
+  --warning: #854f0b;      /* 未確認などの注意 */
+  --warning-bg: #faeeda;
+  --rakuten: #d85a30;      /* 支払い元の色:楽天カード */
+  --paypay: #378add;       /* 支払い元の色:PayPay */
+  color-scheme: light;
+}
+
+/* ---------- ダークモードの色 ---------- */
+/* ① 設定で「ダーク」を選んだとき */
+:root[data-theme="dark"] {
+  --bg: #161615;
+  --surface: #232321;
+  --text: #f1efe8;
+  --text-sub: #a8a69f;
+  --border: #3a3936;
+  --accent: #85b7eb;
+  --accent-bg: #0c447c;
+  --warning: #fac775;
+  --warning-bg: #633806;
+  color-scheme: dark;
+}
+/* ② 設定が「自動」で、iPhone側がダークモードのとき */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161615;
+    --surface: #232321;
+    --text: #f1efe8;
+    --text-sub: #a8a69f;
+    --border: #3a3936;
+    --accent: #85b7eb;
+    --accent-bg: #0c447c;
+    --warning: #fac775;
+    --warning-bg: #633806;
+    color-scheme: dark;
+  }
+}
+
+/* ---------- 全体 ---------- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  /* iPhoneの上部(時計など)と重ならないように余白をとる */
+  padding-top: env(safe-area-inset-top);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------- 画面の切り替え ---------- */
+main {
+  /* 下のタブに隠れないよう、タブの高さ分の余白をとる */
+  padding: 0 1rem calc(5rem + env(safe-area-inset-bottom));
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.screen {
+  display: none;          /* ふだんは隠す */
+}
+
+.screen.is-active {
+  display: block;         /* 選ばれた画面だけ表示する */
+}
+
+.screen-header h1 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin: 1rem 0;
+}
+
+/* ---------- 空のときの表示 ---------- */
+.empty {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  text-align: center;
+}
+
+.empty-title {
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.empty-text {
+  color: var(--text-sub);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* ---------- 設定画面 ---------- */
+.section-label {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  margin: 1rem 0 0.375rem;
+}
+
+.segmented {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.segmented button {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.segmented button + button {
+  border-left: 1px solid var(--border);
+}
+
+.segmented button.is-selected {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.note {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  margin-top: 1.5rem;
+}
+
+/* ---------- 下のタブ ---------- */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  /* iPhoneのホームバー(画面下の横線)と重ならないように余白をとる */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab {
+  flex: 1;
+  padding: 0.5rem 0 0.375rem;
+  border: none;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 0.6875rem;
+  cursor: pointer;
+}
+
+.tab-icon {
+  display: block;
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.tab.is-active {
+  color: var(--accent);
+}
