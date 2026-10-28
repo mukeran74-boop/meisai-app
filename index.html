@@ -23,7 +23,7 @@
       </div>
 
       <div class="summary">
-        <p class="summary-label">今月の合計</p>
+        <p class="summary-label">この月の合計</p>
         <p class="summary-total" id="home-total">0円</p>
         <button type="button" class="badge-warning" id="home-unconfirmed" hidden></button>
       </div>
@@ -91,18 +91,19 @@
 
   <!-- ===== 下のタブ ===== -->
   <nav class="tabbar">
+    <!-- アイコンは線だけのSVGで描く(文字の記号だとiPhoneで絵文字になることがあるため) -->
     <button type="button" class="tab is-active" data-target="screen-home">
-      <span class="tab-icon" aria-hidden="true">⌂</span>ホーム
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></svg>ホーム
     </button>
     <button type="button" class="tab" data-target="screen-list">
-      <span class="tab-icon" aria-hidden="true">≡</span>取引
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>取引
       <span class="tab-badge" id="tab-badge" hidden></span>
     </button>
     <button type="button" class="tab" data-target="screen-graph">
-      <span class="tab-icon" aria-hidden="true">▥</span>グラフ
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V11M10 19V6M15 19v-9M20 19V4"/></svg>グラフ
     </button>
     <button type="button" class="tab" data-target="screen-settings">
-      <span class="tab-icon" aria-hidden="true">⚙</span>設定
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>設定
     </button>
   </nav>
 

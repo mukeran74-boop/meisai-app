@@ -374,8 +374,15 @@ main {
 
 .tab-icon {
   display: block;
-  font-size: 1.25rem;
-  line-height: 1.2;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0 auto 0.125rem;
+  /* 線の色は文字と同じ色にする(選択中は青、それ以外は灰色) */
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .tab.is-active {

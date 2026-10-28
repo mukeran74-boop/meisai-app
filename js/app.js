@@ -335,12 +335,47 @@ async function importFile(file) {
   state.transactions = state.transactions.concat(newItems);
 
   // 結果の文章を作る
+  // 例)「楽天カード 5月:11件追加」
+  //     「PayPay 5月:16件、6月:15件 を追加」
+  const addedByMonth = countByMonth(newItems);
+  const months = Object.keys(addedByMonth).sort();
+
+  let message = SOURCE_NAMES[source] + " ";
+  if (months.length === 0) {
+    message += "追加なし";
+  } else if (months.length === 1) {
+    message += shortMonth(months[0]) + ":" + addedByMonth[months[0]] + "件追加";
+  } else {
+    message += months
+      .map(function (m) { return shortMonth(m) + ":" + addedByMonth[m] + "件"; })
+      .join("、") + " を追加";
+  }
+
+  const notes = [];
   const already = normalized.items.length - newItems.length;
-  let message = SOURCE_NAMES[source] + ":" + newItems.length + "件追加";
-  if (already > 0) message += "、" + already + "件は登録済み";
-  if (normalized.charges > 0) message += "、チャージ" + normalized.charges + "件は対象外";
-  if (normalized.skipped > 0) message += "、" + normalized.skipped + "行は読めませんでした";
+  if (already > 0) notes.push(already + "件は登録済み");
+  if (normalized.charges > 0) notes.push("チャージ" + normalized.charges + "件は対象外");
+  if (normalized.skipped > 0) notes.push(normalized.skipped + "行は読めませんでした");
+  if (notes.length > 0) message += "(" + notes.join("、") + ")";
+
   return message;
+}
+
+// 取引を月ごとに数える { "2026-05": 11, "2026-06": 12 }
+function countByMonth(list) {
+  const result = {};
+  list.forEach(function (t) {
+    const m = t.date.slice(0, 7);
+    result[m] = (result[m] || 0) + 1;
+  });
+  return result;
+}
+
+// "2026-05" → "5月"(今年以外は "2025年12月" のように年も付ける)
+function shortMonth(month) {
+  const parts = month.split("-").map(Number);
+  if (parts[0] !== new Date().getFullYear()) return parts[0] + "年" + parts[1] + "月";
+  return parts[1] + "月";
 }
 
 function showImportResult(text, isError) {
