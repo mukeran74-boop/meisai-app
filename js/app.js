@@ -1,57 +1,387 @@
 // =========================================================
-// 明細メモ  メインのプログラム
+// app.js  画面の動き
 // 今の段階でできること
 //  ・下のタブで4つの画面を切り替える
-//  ・設定画面でライト/ダーク/自動を切り替え、次に開いたときも覚えておく
+//  ・明細CSV(楽天カード・PayPay)を読み込み、重複を除いて保存する
+//  ・ホーム画面に今月の合計と支払い元ごとのまとめを表示する
+//  ・取引一覧を月・支払い元ごとに表示する
+//  ・ライト/ダーク/自動を切り替え、次に開いたときも覚えておく
+//  ・すべてのデータを削除する
 // =========================================================
+
+// ---------- アプリ全体で使う状態 ----------
+const state = {
+  transactions: [], // 保存されている取引すべて
+  month: currentMonth(), // 表示中の月 "2026-10"
+  source: "all", // 一覧で表示する支払い元 "all" / "rakuten" / "paypay"
+};
+
+// 支払い元の表示名
+const SOURCE_NAMES = {
+  rakuten: "楽天カード",
+  paypay: "PayPay",
+};
+
+// ---------- 小さな道具 ----------
+
+// 今日の年月 "2026-10"
+function currentMonth() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+}
+
+// "2026-10" に月を足し引きする
+function addMonth(month, diff) {
+  const parts = month.split("-").map(Number);
+  const d = new Date(parts[0], parts[1] - 1 + diff, 1);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+}
+
+// "2026-10" → "2026年10月"
+function monthLabel(month) {
+  const parts = month.split("-").map(Number);
+  return parts[0] + "年" + parts[1] + "月";
+}
+
+// 12345 → "12,345円"
+function yen(n) {
+  return n.toLocaleString("ja-JP") + "円";
+}
+
+// 表示中の月の取引だけを取り出す
+function transactionsOfMonth(month) {
+  return state.transactions.filter(function (t) {
+    return t.date.slice(0, 7) === month;
+  });
+}
+
+// 金額の合計
+function sum(list) {
+  return list.reduce(function (total, t) {
+    return total + t.amount;
+  }, 0);
+}
+
+// 未確認の件数
+function countUnconfirmed(list) {
+  return list.filter(function (t) {
+    return t.status === "unconfirmed";
+  }).length;
+}
+
+// 取引がある一番新しい月(取引がなければ今月)
+function latestMonth() {
+  if (state.transactions.length === 0) return currentMonth();
+  return state.transactions
+    .map(function (t) { return t.date.slice(0, 7); })
+    .sort()
+    .pop();
+}
 
 // ---------- 下のタブで画面を切り替える ----------
 
-// 下のタブのボタンをすべて取り出す
 const tabs = document.querySelectorAll(".tab");
 
 tabs.forEach(function (tab) {
-  // ボタンが押されたときの処理を登録する
   tab.addEventListener("click", function () {
-    const targetId = tab.dataset.target; // 例: "screen-list"
-    showScreen(targetId);
+    showScreen(tab.dataset.target);
   });
 });
 
-// 指定された画面だけを表示し、ほかの画面は隠す
 function showScreen(screenId) {
-  // すべての画面から「表示中」の印を外す
   document.querySelectorAll(".screen").forEach(function (screen) {
-    screen.classList.remove("is-active");
+    screen.classList.toggle("is-active", screen.id === screenId);
   });
-  // 選ばれた画面に「表示中」の印を付ける
-  document.getElementById(screenId).classList.add("is-active");
-
-  // タブの見た目も、選ばれたものだけ色を変える
   tabs.forEach(function (tab) {
     tab.classList.toggle("is-active", tab.dataset.target === screenId);
   });
-
-  // 画面を切り替えたら一番上から表示する
   window.scrollTo(0, 0);
 }
 
+// ---------- 画面を最新の状態に描き直す ----------
+
+function render() {
+  renderMonthNav();
+  renderHome();
+  renderList();
+  renderTabBadge();
+}
+
+// 月の表示(ホームと取引の両方)
+function renderMonthNav() {
+  document.querySelectorAll(".month-label").forEach(function (label) {
+    label.textContent = monthLabel(state.month);
+  });
+}
+
+// ホーム画面
+function renderHome() {
+  const list = transactionsOfMonth(state.month);
+  document.getElementById("home-total").textContent = yen(sum(list));
+
+  // 未確認の件数
+  const unconfirmedButton = document.getElementById("home-unconfirmed");
+  const unconfirmed = countUnconfirmed(list);
+  unconfirmedButton.hidden = unconfirmed === 0;
+  unconfirmedButton.textContent = "未確認 " + unconfirmed + "件";
+
+  // 支払い元ごとのカード(DOMで1枚ずつ作る)
+  const box = document.getElementById("home-sources");
+  box.innerHTML = "";
+  ["rakuten", "paypay"].forEach(function (source) {
+    const items = list.filter(function (t) { return t.source === source; });
+
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "source-card";
+    card.style.borderLeftColor = "var(--" + source + ")";
+
+    const left = document.createElement("span");
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = SOURCE_NAMES[source];
+    const sub = document.createElement("span");
+    sub.className = "sub";
+    sub.textContent = items.length + "件・未確認 " + countUnconfirmed(items) + "件";
+    left.append(name, sub);
+
+    const amount = document.createElement("span");
+    amount.className = "amount";
+    amount.textContent = yen(sum(items));
+
+    card.append(left, amount);
+
+    // タップするとその支払い元の一覧へ
+    card.addEventListener("click", function () {
+      setSourceFilter(source);
+      showScreen("screen-list");
+    });
+
+    box.appendChild(card);
+  });
+}
+
+// 取引一覧
+function renderList() {
+  let list = transactionsOfMonth(state.month);
+  if (state.source !== "all") {
+    list = list.filter(function (t) { return t.source === state.source; });
+  }
+
+  // 日付・時刻の新しい順に並べる
+  list.sort(function (a, b) {
+    const ka = a.date + (a.time || "");
+    const kb = b.date + (b.time || "");
+    return kb.localeCompare(ka);
+  });
+
+  document.getElementById("list-total").textContent =
+    list.length + "件・合計 " + yen(sum(list));
+
+  const ul = document.getElementById("tx-list");
+  ul.innerHTML = "";
+
+  if (list.length === 0) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.innerHTML = '<p class="empty-text">この月の取引はありません。</p>';
+    ul.appendChild(li);
+    return;
+  }
+
+  list.forEach(function (t) {
+    ul.appendChild(createTransactionRow(t));
+  });
+}
+
+// 取引1件分の行を作る
+function createTransactionRow(t) {
+  const li = document.createElement("li");
+  li.className = "tx";
+
+  // 画像の代わりのアイコン(店名の1文字目)
+  const icon = document.createElement("div");
+  icon.className = "tx-icon " + t.source;
+  icon.textContent = t.name.charAt(0);
+
+  // 店名と日付など
+  const body = document.createElement("div");
+  body.className = "tx-body";
+  const name = document.createElement("div");
+  name.className = "tx-name";
+  name.textContent = t.name;
+  const sub = document.createElement("div");
+  sub.className = "tx-sub";
+  const md = Number(t.date.slice(5, 7)) + "/" + Number(t.date.slice(8, 10));
+  sub.textContent = md + (t.time ? " " + t.time : "") + "・" + SOURCE_NAMES[t.source];
+  if (t.status === "unconfirmed") {
+    const mark = document.createElement("span");
+    mark.className = "unconfirmed";
+    mark.textContent = "・未確認";
+    sub.appendChild(mark);
+  }
+  body.append(name, sub);
+
+  // 金額(返品・返金はマイナスで色を変える)
+  const amount = document.createElement("div");
+  amount.className = "tx-amount" + (t.amount < 0 ? " minus" : "");
+  amount.textContent = yen(t.amount);
+
+  li.append(icon, body, amount);
+  return li;
+}
+
+// 取引タブの未確認の件数
+function renderTabBadge() {
+  const badge = document.getElementById("tab-badge");
+  const n = countUnconfirmed(state.transactions);
+  badge.hidden = n === 0;
+  badge.textContent = n > 99 ? "99+" : String(n);
+}
+
+// ---------- 月の切り替え ----------
+
+document.querySelectorAll(".month-prev").forEach(function (button) {
+  button.addEventListener("click", function () {
+    state.month = addMonth(state.month, -1);
+    render();
+  });
+});
+
+document.querySelectorAll(".month-next").forEach(function (button) {
+  button.addEventListener("click", function () {
+    state.month = addMonth(state.month, 1);
+    render();
+  });
+});
+
+// ホームの「未確認 ◯件」を押したら一覧へ
+document.getElementById("home-unconfirmed").addEventListener("click", function () {
+  showScreen("screen-list");
+});
+
+// ---------- 支払い元の切り替え(一覧画面) ----------
+
+function setSourceFilter(source) {
+  state.source = source;
+  document.querySelectorAll("#source-filter button").forEach(function (button) {
+    button.classList.toggle("is-selected", button.dataset.source === source);
+  });
+  renderList();
+}
+
+document.querySelectorAll("#source-filter button").forEach(function (button) {
+  button.addEventListener("click", function () {
+    setSourceFilter(button.dataset.source);
+  });
+});
+
+// ---------- 明細CSVの読み込み ----------
+
+const importInput = document.getElementById("import-input");
+
+// 見た目のボタンを押したら、隠してあるファイル選択欄を開く
+document.getElementById("import-button").addEventListener("click", function () {
+  importInput.click();
+});
+
+importInput.addEventListener("change", async function () {
+  const files = Array.from(importInput.files);
+  if (files.length === 0) return;
+
+  // ファイル名順に読む(楽天の月別ファイルを古い順に処理するため)
+  files.sort(function (a, b) { return a.name.localeCompare(b.name); });
+
+  const messages = [];
+  let hasError = false;
+
+  for (const file of files) {
+    try {
+      const result = await importFile(file);
+      messages.push(result);
+    } catch (error) {
+      console.error(error);
+      hasError = true;
+      messages.push(file.name + ":" + error.message);
+    }
+  }
+
+  // 読み込んだら、一番新しい月を表示する
+  state.month = latestMonth();
+  render();
+  showImportResult(messages.join("\n"), hasError);
+
+  // 同じファイルをもう一度選んでも反応するように、選択を空にする
+  importInput.value = "";
+});
+
+// 1ファイル分を読み込んで保存し、結果の文章を返す
+async function importFile(file) {
+  const text = await file.text(); // UTF-8として読む(2社ともUTF-8)
+  const rows = parseCSV(text);
+  if (rows.length === 0) {
+    throw new Error("ファイルが空です");
+  }
+
+  const source = detectSource(rows[0]);
+  if (!source) {
+    throw new Error("このファイルは読み込めません(楽天カード・PayPayのCSVではないようです)");
+  }
+
+  const normalized = source === "rakuten" ? normalizeRakuten(rows) : normalizePayPay(rows);
+  const newItems = pickNewItems(state.transactions, normalized.items);
+
+  await addTransactions(newItems);
+  state.transactions = state.transactions.concat(newItems);
+
+  // 結果の文章を作る
+  const already = normalized.items.length - newItems.length;
+  let message = SOURCE_NAMES[source] + ":" + newItems.length + "件追加";
+  if (already > 0) message += "、" + already + "件は登録済み";
+  if (normalized.charges > 0) message += "、チャージ" + normalized.charges + "件は対象外";
+  if (normalized.skipped > 0) message += "、" + normalized.skipped + "行は読めませんでした";
+  return message;
+}
+
+function showImportResult(text, isError) {
+  const box = document.getElementById("import-result");
+  box.hidden = false;
+  box.textContent = text;
+  box.classList.toggle("is-error", isError);
+}
+
+// ---------- すべてのデータを削除 ----------
+
+document.getElementById("clear-button").addEventListener("click", async function () {
+  const ok = window.confirm("読み込んだ明細をすべて削除します。元に戻せません。本当に削除しますか?");
+  if (!ok) return;
+
+  try {
+    await clearTransactions();
+    state.transactions = [];
+    state.month = currentMonth();
+    document.getElementById("import-result").hidden = true;
+    render();
+    window.alert("すべてのデータを削除しました。");
+  } catch (error) {
+    console.error(error);
+    window.alert("削除できませんでした。もう一度お試しください。");
+  }
+});
+
 // ---------- 画面のモード(ライト/ダーク/自動) ----------
 
-const THEME_KEY = "meisai-theme"; // 保存するときの名前
+const THEME_KEY = "meisai-theme";
 
-// 保存されている設定を読み出す(読めなければ「自動」にする)
 function loadTheme() {
   try {
     return localStorage.getItem(THEME_KEY) || "auto";
   } catch (error) {
-    // プライベートブラウズなどで保存領域が使えない場合
     console.warn("画面のモードを読み込めませんでした", error);
     return "auto";
   }
 }
 
-// 設定を保存する
 function saveTheme(theme) {
   try {
     localStorage.setItem(THEME_KEY, theme);
@@ -60,30 +390,39 @@ function saveTheme(theme) {
   }
 }
 
-// 画面に反映する
-//  ・"light" / "dark" … <html data-theme="..."> を付けて色を固定する
-//  ・"auto"           … 印を外して、iPhoneの設定に任せる
 function applyTheme(theme) {
   if (theme === "auto") {
     document.documentElement.removeAttribute("data-theme");
   } else {
     document.documentElement.setAttribute("data-theme", theme);
   }
-
-  // 設定画面のボタンの見た目を、選ばれたものだけ強調する
   document.querySelectorAll("#theme-switch button").forEach(function (button) {
     button.classList.toggle("is-selected", button.dataset.theme === theme);
   });
 }
 
-// 設定画面のボタンが押されたとき
 document.querySelectorAll("#theme-switch button").forEach(function (button) {
   button.addEventListener("click", function () {
-    const theme = button.dataset.theme;
-    applyTheme(theme);
-    saveTheme(theme);
+    applyTheme(button.dataset.theme);
+    saveTheme(button.dataset.theme);
   });
 });
 
-// アプリを開いたときに、前回の設定を反映する
-applyTheme(loadTheme());
+// ---------- アプリを開いたときの処理 ----------
+
+async function init() {
+  applyTheme(loadTheme());
+  requestPersistentStorage();
+
+  try {
+    state.transactions = await getAllTransactions();
+  } catch (error) {
+    console.error(error);
+    showImportResult("保存したデータを読み込めませんでした。", true);
+  }
+
+  state.month = latestMonth();
+  render();
+}
+
+init();

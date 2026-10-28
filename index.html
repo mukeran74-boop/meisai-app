@@ -12,52 +12,78 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <!-- ===== 画面(タブで切り替える4つの画面) ===== -->
   <main>
-    <!-- ホーム画面 -->
+    <!-- ===== ホーム画面 ===== -->
     <section id="screen-home" class="screen is-active">
-      <header class="screen-header">
-        <h1>ホーム</h1>
-      </header>
-      <div class="empty">
-        <p class="empty-title">明細を読み込みましょう</p>
-        <p class="empty-text">楽天カードやPayPayのCSVを読み込むと、ここに今月のまとめが表示されます。</p>
+      <!-- 月の切り替え(ホームと取引で共通の月を使う) -->
+      <div class="month-nav">
+        <button type="button" class="month-prev" aria-label="前の月">‹</button>
+        <span class="month-label"></span>
+        <button type="button" class="month-next" aria-label="次の月">›</button>
       </div>
+
+      <div class="summary">
+        <p class="summary-label">今月の合計</p>
+        <p class="summary-total" id="home-total">0円</p>
+        <button type="button" class="badge-warning" id="home-unconfirmed" hidden></button>
+      </div>
+
+      <!-- 支払い元ごとのまとめ(タップでその支払い元の一覧へ) -->
+      <div id="home-sources"></div>
+
+      <!-- 読み込みの結果をここに表示する -->
+      <p class="import-result" id="import-result" hidden></p>
+
+      <!-- 明細を読み込むボタン。本物のファイル選択欄は隠し、ボタンから呼び出す -->
+      <button type="button" class="primary-button" id="import-button">明細を読み込む</button>
+      <input type="file" id="import-input" accept=".csv,text/csv" multiple hidden>
+      <p class="hint">楽天カード・PayPayのCSVに対応しています。複数のファイルをまとめて選べます。</p>
     </section>
 
-    <!-- 取引一覧画面 -->
+    <!-- ===== 取引一覧画面 ===== -->
     <section id="screen-list" class="screen">
-      <header class="screen-header">
-        <h1>取引</h1>
-      </header>
-      <div class="empty">
-        <p class="empty-text">まだ取引がありません。</p>
+      <div class="month-nav">
+        <button type="button" class="month-prev" aria-label="前の月">‹</button>
+        <span class="month-label"></span>
+        <button type="button" class="month-next" aria-label="次の月">›</button>
       </div>
+
+      <!-- 支払い元の切り替え -->
+      <div class="segmented" id="source-filter">
+        <button type="button" data-source="all" class="is-selected">すべて</button>
+        <button type="button" data-source="rakuten">楽天カード</button>
+        <button type="button" data-source="paypay">PayPay</button>
+      </div>
+
+      <p class="list-total" id="list-total"></p>
+      <ul class="tx-list" id="tx-list"></ul>
     </section>
 
-    <!-- グラフ画面 -->
+    <!-- ===== グラフ画面 ===== -->
     <section id="screen-graph" class="screen">
       <header class="screen-header">
         <h1>グラフ</h1>
       </header>
       <div class="empty">
-        <p class="empty-text">取引を読み込むと、月ごとのグラフが表示されます。</p>
+        <p class="empty-text">月ごとのグラフはこれから作ります。</p>
       </div>
     </section>
 
-    <!-- 設定画面 -->
+    <!-- ===== 設定画面 ===== -->
     <section id="screen-settings" class="screen">
       <header class="screen-header">
         <h1>設定</h1>
       </header>
 
       <p class="section-label">画面のモード</p>
-      <!-- 自動/ライト/ダークの切り替えボタン。data-theme の値をJavaScriptで読む -->
       <div class="segmented" id="theme-switch">
         <button type="button" data-theme="auto">自動</button>
         <button type="button" data-theme="light">ライト</button>
         <button type="button" data-theme="dark">ダーク</button>
       </div>
+
+      <p class="section-label">データ</p>
+      <button type="button" class="danger-button" id="clear-button">すべてのデータを削除</button>
 
       <p class="note">データはこのiPhoneの中だけに保存しています。</p>
     </section>
@@ -70,6 +96,7 @@
     </button>
     <button type="button" class="tab" data-target="screen-list">
       <span class="tab-icon" aria-hidden="true">≡</span>取引
+      <span class="tab-badge" id="tab-badge" hidden></span>
     </button>
     <button type="button" class="tab" data-target="screen-graph">
       <span class="tab-icon" aria-hidden="true">▥</span>グラフ
@@ -79,6 +106,9 @@
     </button>
   </nav>
 
+  <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
+  <script src="js/db.js"></script>
+  <script src="js/csv.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

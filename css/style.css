@@ -154,6 +154,201 @@ main {
   margin-top: 1.5rem;
 }
 
+/* ---------- 月の切り替え ---------- */
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1rem 0 0.75rem;
+}
+
+.month-nav button {
+  border: none;
+  background: transparent;
+  font-size: 1.75rem;
+  line-height: 1;
+  padding: 0 0.75rem;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+
+.month-label {
+  font-weight: 600;
+  font-size: 1.0625rem;
+}
+
+/* ---------- ホーム画面 ---------- */
+.summary {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  margin: 0;
+}
+
+.summary-total {
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.badge-warning {
+  border: none;
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.75rem;
+  border-radius: 8px;
+  margin-top: 0.375rem;
+  cursor: pointer;
+}
+
+.source-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  padding: 0.75rem;
+  margin-bottom: 0.625rem;
+  cursor: pointer;
+}
+
+.source-card .name {
+  font-weight: 600;
+  display: block;
+}
+
+.source-card .sub {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+}
+
+.source-card .amount {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.primary-button {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--surface);
+  font-weight: 600;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  text-align: center;
+  margin: 0.5rem 0 0;
+}
+
+.import-result {
+  font-size: 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.625rem 0.75rem;
+  margin: 1rem 0 0;
+  white-space: pre-line; /* 改行をそのまま表示する */
+}
+
+.import-result.is-error {
+  color: var(--warning);
+  background: var(--warning-bg);
+  border-color: transparent;
+}
+
+/* ---------- 取引一覧 ---------- */
+.list-total {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  margin: 0.75rem 0 0.25rem;
+}
+
+.tx-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tx {
+  display: flex;
+  gap: 0.625rem;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+/* 画像の代わりの丸いアイコン(支払い元の色で、店名の1文字目を表示) */
+.tx-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.tx-icon.rakuten { background: var(--rakuten); }
+.tx-icon.paypay { background: var(--paypay); }
+
+.tx-body {
+  flex: 1;
+  min-width: 0; /* 長い店名がはみ出さないようにする */
+}
+
+.tx-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* 長い店名は「…」で省略 */
+}
+
+.tx-sub {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+}
+
+.tx-sub .unconfirmed {
+  color: var(--warning);
+}
+
+.tx-amount {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tx-amount.minus {
+  color: var(--paypay);
+}
+
+.danger-button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: #e24b4a;
+  padding: 0.75rem;
+  cursor: pointer;
+}
+
 /* ---------- 下のタブ ---------- */
 .tabbar {
   position: fixed;
@@ -185,4 +380,22 @@ main {
 
 .tab.is-active {
   color: var(--accent);
+}
+
+.tab {
+  position: relative;
+}
+
+/* 取引タブの未確認の件数(LINEの未読の数字のような印) */
+.tab-badge {
+  position: absolute;
+  top: 0.25rem;
+  left: 55%;
+  min-width: 1.1rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: #e24b4a;
+  color: #ffffff;
+  font-size: 0.625rem;
+  line-height: 1.1rem;
 }
