@@ -125,7 +125,9 @@ function showScreen(screenId) {
   // 詳細画面は「取引」タブ、お店の辞書は「設定」タブの中の画面として扱う
   let activeTab = screenId;
   if (screenId === "screen-detail") activeTab = "screen-list";
-  if (screenId === "screen-shops") activeTab = "screen-settings";
+  if (["screen-shops", "screen-source", "screen-about"].indexOf(screenId) !== -1) {
+    activeTab = "screen-settings";
+  }
   tabs.forEach(function (tab) {
     tab.classList.toggle("is-active", tab.dataset.target === activeTab);
   });
@@ -884,6 +886,8 @@ document.querySelectorAll("#theme-switch button").forEach(function (button) {
 
 async function init() {
   applyTheme(loadTheme());
+  applySourceSettings(); // 支払い元の名前と色(settings.js)
+  showGuideIfNeeded(); // Safariで開いたときは、ホーム画面に追加する方法を案内する
   requestPersistentStorage();
 
   // 設定画面に今の版を表示する(更新が反映されたかの確認用)

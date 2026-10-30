@@ -818,6 +818,112 @@ main {
   font-size: 0.875rem;
 }
 
+/* ---------- 設定画面の仕上げ ---------- */
+/* 項目をまとめて1つの枠に入れる */
+.settings-group {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.settings-group .settings-item {
+  border: none;
+  border-radius: 0;
+}
+
+.settings-group .settings-item + .settings-item {
+  border-top: 1px solid var(--border);
+}
+
+/* リンク(公式ページを開く)もボタンと同じ見た目にする */
+.link-item {
+  color: var(--accent);
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.text-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem; /* 16px未満だとiPhoneで入力時に勝手に拡大されるため */
+  padding: 0.5rem 0.75rem;
+}
+
+/* 色の選択肢 */
+.swatches {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.swatch {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+}
+
+.swatch.is-selected {
+  border-color: var(--text); /* 選んでいる色に枠を付ける */
+}
+
+/* このアプリについて */
+.about p {
+  font-size: 0.9375rem;
+  margin: 0 0 1rem;
+}
+
+/* ホーム画面に追加する方法の案内(画面全体を少し暗くして、中央にカードを出す) */
+.guide {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.guide[hidden] {
+  display: none;
+}
+
+.guide-card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 1.25rem;
+  max-width: 24rem;
+  width: 100%;
+}
+
+.guide-title {
+  font-weight: 600;
+  font-size: 1.0625rem;
+  margin: 0 0 0.5rem;
+}
+
+.guide-text {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  margin: 0 0 0.75rem;
+}
+
+.guide-steps {
+  font-size: 0.875rem;
+  padding-left: 1.25rem;
+  margin: 0;
+}
+
+.guide-steps li {
+  margin-bottom: 0.25rem;
+}
+
 /* ---------- 下のタブ ---------- */
 .tabbar {
   position: fixed;
