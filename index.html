@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>明細メモ</title>
-  <link rel="stylesheet" href="css/style.css?v=2026103007">
+  <link rel="stylesheet" href="css/style.css?v=2026103008">
 </head>
 <body>
   <main>
@@ -165,6 +165,13 @@
     </section>
   </main>
 
+  <!-- ===== 写真の拡大表示(詳細画面の写真をタップすると開く) ===== -->
+  <div class="viewer" id="viewer" hidden>
+    <img class="viewer-img" id="viewer-img" alt="拡大した写真">
+    <button type="button" class="viewer-close" id="viewer-close" aria-label="閉じる">×</button>
+    <p class="viewer-hint">2本指で拡大・縮小/ダブルタップで拡大</p>
+  </div>
+
   <!-- ===== 下のタブ ===== -->
   <nav class="tabbar">
     <!-- アイコンは線だけのSVGで描く(文字の記号だとiPhoneで絵文字になることがあるため) -->
@@ -184,12 +191,13 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/update.js?v=2026103007"></script>
-  <script src="js/db.js?v=2026103007"></script>
-  <script src="js/csv.js?v=2026103007"></script>
-  <script src="js/image.js?v=2026103007"></script>
-  <script src="js/shops.js?v=2026103007"></script>
-  <script src="js/analysis.js?v=2026103007"></script>
-  <script src="js/app.js?v=2026103007"></script>
+  <script src="js/update.js?v=2026103008"></script>
+  <script src="js/db.js?v=2026103008"></script>
+  <script src="js/csv.js?v=2026103008"></script>
+  <script src="js/image.js?v=2026103008"></script>
+  <script src="js/shops.js?v=2026103008"></script>
+  <script src="js/analysis.js?v=2026103008"></script>
+  <script src="js/viewer.js?v=2026103008"></script>
+  <script src="js/app.js?v=2026103008"></script>
 </body>
 </html>

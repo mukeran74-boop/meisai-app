@@ -607,7 +607,14 @@ async function renderDetail() {
       const img = document.createElement("img");
       img.src = url;
       img.alt = t.name + "の写真";
-      photo.appendChild(img);
+      // タップすると拡大表示(viewer.js)
+      img.addEventListener("click", function () {
+        openViewer(url);
+      });
+      const zoomHint = document.createElement("span");
+      zoomHint.className = "zoom-hint";
+      zoomHint.textContent = "タップで拡大";
+      photo.append(img, zoomHint);
     }
   } else {
     // 写真がないときは、カテゴリの色とアイコンを大きく表示する

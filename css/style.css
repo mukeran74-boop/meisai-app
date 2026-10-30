@@ -698,6 +698,77 @@ main {
   cursor: pointer;
 }
 
+/* ---------- 写真の拡大表示 ---------- */
+.detail-photo {
+  position: relative; /* 「タップで拡大」の文字を写真の上に重ねるため */
+}
+
+.detail-photo img {
+  cursor: zoom-in;
+}
+
+.zoom-hint {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  font-size: 0.6875rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  pointer-events: none; /* 文字の上をタップしても写真のタップとして扱う */
+}
+
+/* 画面全体を覆う黒い背景 */
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 100; /* 下のタブより上に出す */
+  background: #000000;
+  overflow: hidden;
+  touch-action: none; /* ブラウザ自身のスクロールや拡大を止め、自分で処理する */
+}
+
+.viewer[hidden] {
+  display: none;
+}
+
+.viewer-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 写真全体が画面に収まるように表示 */
+  transform-origin: center center;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.viewer-close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 3.25rem);
+  right: 1rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.viewer-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom) + 1.5rem);
+  margin: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
 /* ---------- お店の辞書 ---------- */
 /* カテゴリのアイコン(白い線) */
 .category-icon {
