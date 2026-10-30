@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>明細メモ</title>
-  <link rel="stylesheet" href="css/style.css?v=2026103003">
+  <link rel="stylesheet" href="css/style.css?v=2026103004">
 </head>
 <body>
   <main>
@@ -125,10 +125,25 @@
         <button type="button" data-theme="dark">ダーク</button>
       </div>
 
+      <p class="section-label">アプリ</p>
+      <button type="button" class="settings-item" id="open-shops">
+        <span>お店の辞書</span>
+        <span class="settings-sub" id="shops-count"></span>
+      </button>
+
       <p class="section-label">データ</p>
       <button type="button" class="danger-button" id="clear-button">すべてのデータを削除</button>
 
       <p class="note">データはこのiPhoneの中だけに保存しています。</p>
+    </section>
+    <!-- ===== お店の辞書の一覧(設定から開く) ===== -->
+    <section id="screen-shops" class="screen">
+      <button type="button" class="back-button" id="shops-back">‹ 設定</button>
+      <header class="screen-header">
+        <h1>お店の辞書</h1>
+      </header>
+      <p class="hint" style="text-align:left">明細の店名にここの言葉が含まれていると、分かりやすい名前とアイコンで表示します。辞書に当てはまっても、自動で確認済みにはしません。</p>
+      <ul class="tx-list" id="shop-list"></ul>
     </section>
   </main>
 
@@ -151,9 +166,10 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/db.js?v=2026103003"></script>
-  <script src="js/csv.js?v=2026103003"></script>
-  <script src="js/image.js?v=2026103003"></script>
-  <script src="js/app.js?v=2026103003"></script>
+  <script src="js/db.js?v=2026103004"></script>
+  <script src="js/csv.js?v=2026103004"></script>
+  <script src="js/image.js?v=2026103004"></script>
+  <script src="js/shops.js?v=2026103004"></script>
+  <script src="js/app.js?v=2026103004"></script>
 </body>
 </html>

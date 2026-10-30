@@ -1,0 +1,103 @@
+{
+  "_説明": "お店の辞書。patterns のどれかが明細の店名に含まれていれば、その店として表示する。すべて架空のお店。",
+  "shops": [
+    {
+      "id": "convenience-a",
+      "patterns": ["コンビニエンスA"],
+      "name": "コンビニエンスA",
+      "category": "コンビニ",
+      "description": "よく行くコンビニ。駅前店と大学通り店をまとめて1つの店として扱う。"
+    },
+    {
+      "id": "netmarket",
+      "patterns": ["NETMARKET"],
+      "name": "ネットマーケット",
+      "category": "通販",
+      "description": "ネット通販。毎回買う物が違うので、写真かメモで何を買ったか残す。"
+    },
+    {
+      "id": "sugomovie",
+      "patterns": ["SUGOMOVIE"],
+      "name": "スゴムービー",
+      "category": "サブスク",
+      "description": "動画配信サービス(スタンダードプラン)。月額1,490円、毎月10日ごろに引き落とし。"
+    },
+    {
+      "id": "ai-assist",
+      "patterns": ["AI ASSIST"],
+      "name": "AIアシスタント",
+      "category": "サブスク",
+      "description": "AIチャットサービスの有料プラン。月額3,200円、毎月27日ごろに引き落とし。海外のサービスなので明細に「利用国US」と付く。"
+    },
+    {
+      "id": "sample-denryoku",
+      "patterns": ["デンキリョウキン", "サンプルデンリョク"],
+      "name": "電気料金(サンプル電力)",
+      "category": "公共料金",
+      "description": "毎月の電気代。夏と冬は高くなりやすい。"
+    },
+    {
+      "id": "hikari-oil",
+      "patterns": ["ガソリンスタンド ヒカリ"],
+      "name": "ヒカリ石油",
+      "category": "車",
+      "description": "いつものガソリンスタンド。"
+    },
+    {
+      "id": "midoriya",
+      "patterns": ["ミドリヤ"],
+      "name": "スーパー ミドリヤ",
+      "category": "食料品",
+      "description": "近所のスーパー。週に数回の買い出し。"
+    },
+    {
+      "id": "drugstore-b",
+      "patterns": ["ドラッグストアB"],
+      "name": "ドラッグストアB",
+      "category": "日用品",
+      "description": "薬局。洗剤やシャンプーなどの日用品。"
+    },
+    {
+      "id": "happy-100",
+      "patterns": ["100円ショップ ハッピー"],
+      "name": "100円ショップ ハッピー",
+      "category": "日用品",
+      "description": "100円ショップ。"
+    },
+    {
+      "id": "cafe-hidamari",
+      "patterns": ["カフェ ひだまり"],
+      "name": "カフェ ひだまり",
+      "category": "外食",
+      "description": "駅の近くのカフェ。"
+    },
+    {
+      "id": "cafe-komorebi",
+      "patterns": ["カフェ コモレビ"],
+      "name": "カフェ こもれび",
+      "category": "外食",
+      "description": "大学の近くのカフェ。"
+    },
+    {
+      "id": "ramen-ippo",
+      "patterns": ["ラーメン いっぽ"],
+      "name": "ラーメン いっぽ",
+      "category": "外食",
+      "description": "ラーメン屋。"
+    },
+    {
+      "id": "gamestore-s",
+      "patterns": ["ゲームストアS"],
+      "name": "ゲームストアS",
+      "category": "ゲーム",
+      "description": "ゲームのダウンロード販売。"
+    },
+    {
+      "id": "kaden-ace",
+      "patterns": ["カデンハンバイテン エース"],
+      "name": "家電販売店エース",
+      "category": "家電",
+      "description": "家電量販店。大きな買い物は分割払いにすることがある。"
+    }
+  ]
+}

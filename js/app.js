@@ -122,8 +122,10 @@ function showScreen(screenId) {
   document.querySelectorAll(".screen").forEach(function (screen) {
     screen.classList.toggle("is-active", screen.id === screenId);
   });
-  // 詳細画面は「取引」タブの中の画面として扱う
-  const activeTab = screenId === "screen-detail" ? "screen-list" : screenId;
+  // 詳細画面は「取引」タブ、お店の辞書は「設定」タブの中の画面として扱う
+  let activeTab = screenId;
+  if (screenId === "screen-detail") activeTab = "screen-list";
+  if (screenId === "screen-shops") activeTab = "screen-settings";
   tabs.forEach(function (tab) {
     tab.classList.toggle("is-active", tab.dataset.target === activeTab);
   });
@@ -242,32 +244,38 @@ function createTransactionRow(t) {
     openDetail(t.id);
   });
 
-  // 写真があれば写真、なければ仮のアイコン(店名の1文字目)
+  // 写真があれば写真、なければお店の辞書のカテゴリのアイコン
   const icon = document.createElement("div");
-  icon.className = "tx-icon " + t.source;
-  icon.textContent = t.name.charAt(0);
+  icon.className = "tx-icon";
+  icon.style.background = categoryOf(t).color;
+  icon.appendChild(createCategoryIcon(t));
   if (t.hasImage) {
     getImageURL(t.id).then(function (url) {
       if (!url) return;
       const img = document.createElement("img");
       img.src = url;
       img.alt = "";
-      icon.textContent = "";
+      icon.innerHTML = "";
+      icon.style.background = "transparent";
       icon.appendChild(img);
     });
   }
 
-  // 店名と日付など
+  // 店名(辞書にあれば分かりやすい名前)と日付など
   const body = document.createElement("div");
   body.className = "tx-body";
   const name = document.createElement("div");
   name.className = "tx-name";
-  name.textContent = t.name;
+  name.textContent = displayName(t);
   const sub = document.createElement("div");
   sub.className = "tx-sub";
+  // 支払い元の色の点(楽天カード=オレンジ、PayPay=青)
+  const dot = document.createElement("span");
+  dot.className = "source-dot";
+  dot.style.background = "var(--" + t.source + ")";
   const md = Number(t.date.slice(5, 7)) + "/" + Number(t.date.slice(8, 10));
   // メモがあればメモ、なければ支払い元を表示する
-  sub.textContent = md + (t.time ? " " + t.time : "") + "・" + (t.memo || SOURCE_NAMES[t.source]);
+  sub.append(dot, md + (t.time ? " " + t.time : "") + "・" + (t.memo || SOURCE_NAMES[t.source]));
   if (t.status === "unconfirmed") {
     const mark = document.createElement("span");
     mark.className = "unconfirmed";
@@ -475,21 +483,24 @@ async function renderDetail() {
       photo.appendChild(img);
     }
   } else {
-    photo.classList.add("is-empty", t.source);
-    const letter = document.createElement("span");
-    letter.textContent = t.name.charAt(0);
+    // 写真がないときは、カテゴリの色とアイコンを大きく表示する
+    photo.classList.add("is-empty");
+    photo.style.background = categoryOf(t).color;
     const hint = document.createElement("span");
     hint.className = "photo-hint";
     hint.textContent = "写真はまだありません";
-    photo.append(letter, hint);
+    photo.append(createCategoryIcon(t), hint);
   }
+  if (t.hasImage) photo.style.background = "";
   document.getElementById("photo-delete").hidden = !t.hasImage;
 
-  // 店名・明細の元の表記・金額
-  document.getElementById("detail-name").textContent = t.name;
+  // 店名(辞書の名前)・明細の元の表記・金額
+  const shop = findShop(t);
+  const name = displayName(t);
+  document.getElementById("detail-name").textContent = name;
   const raw = document.getElementById("detail-raw");
   raw.textContent = "明細の表記:" + t.rawName;
-  raw.hidden = t.rawName === t.name;
+  raw.hidden = t.rawName === name;
   const amount = document.getElementById("detail-amount");
   amount.textContent = yen(t.amount);
   amount.classList.toggle("minus", t.amount < 0);
@@ -500,7 +511,10 @@ async function renderDetail() {
     ["日時", parts[0] + "年" + parts[1] + "月" + parts[2] + "日" + (t.time ? " " + t.time : "")],
     ["支払い元", SOURCE_NAMES[t.source]],
     ["支払い方法", t.method || "-"],
+    // お店の辞書に当てはまったときは、カテゴリと説明も出す
+    ["カテゴリ", shop ? shop.category : "辞書に登録なし"],
   ];
+  if (shop && shop.description) rows.push(["説明", shop.description]);
   const info = document.getElementById("detail-info");
   info.innerHTML = "";
   rows.forEach(function (row) {
@@ -628,6 +642,51 @@ document.getElementById("photo-delete").addEventListener("click", async function
   }
 });
 
+// ---------- お店の辞書の一覧(設定画面から開く) ----------
+
+function renderShopList() {
+  document.getElementById("shops-count").textContent = shopList.length + "件 ›";
+
+  const ul = document.getElementById("shop-list");
+  ul.innerHTML = "";
+  shopList.forEach(function (shop) {
+    const li = document.createElement("li");
+    li.className = "tx shop-item";
+
+    // アイコンは、辞書の店名を使った仮の取引で作る
+    const sample = { name: shop.patterns[0].normalize("NFKC") };
+    const icon = document.createElement("div");
+    icon.className = "tx-icon";
+    icon.style.background = categoryOf(sample).color;
+    icon.appendChild(createCategoryIcon(sample));
+
+    const body = document.createElement("div");
+    body.className = "tx-body";
+    const name = document.createElement("div");
+    name.className = "tx-name";
+    name.textContent = shop.name;
+    const sub = document.createElement("div");
+    sub.className = "tx-sub";
+    sub.textContent = shop.category + "・明細の表記に「" + shop.patterns.join("」「") + "」を含む";
+    const desc = document.createElement("div");
+    desc.className = "tx-sub";
+    desc.textContent = shop.description || "";
+    body.append(name, sub, desc);
+
+    li.append(icon, body);
+    ul.appendChild(li);
+  });
+}
+
+document.getElementById("open-shops").addEventListener("click", function () {
+  renderShopList();
+  showScreen("screen-shops");
+});
+
+document.getElementById("shops-back").addEventListener("click", function () {
+  showScreen("screen-settings");
+});
+
 // ---------- すべてのデータを削除 ----------
 
 document.getElementById("clear-button").addEventListener("click", async function () {
@@ -693,6 +752,9 @@ async function init() {
   applySafeTop();
   applyTheme(loadTheme());
   requestPersistentStorage();
+
+  await loadShops(); // お店の辞書を読み込む
+  renderShopList();
 
   try {
     state.transactions = await getAllTransactions();

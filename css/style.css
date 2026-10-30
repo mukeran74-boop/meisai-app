@@ -570,6 +570,55 @@ main {
   color: var(--warning);
 }
 
+/* ---------- お店の辞書 ---------- */
+/* カテゴリのアイコン(白い線) */
+.category-icon {
+  width: 60%;
+  height: 60%;
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.detail-photo.is-empty .category-icon {
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+/* 支払い元の色の点 */
+.source-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  margin-right: 0.3rem;
+  vertical-align: 0.05rem;
+}
+
+.shop-item {
+  cursor: default;
+  align-items: flex-start;
+}
+
+.settings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 0.75rem;
+  cursor: pointer;
+}
+
+.settings-sub {
+  color: var(--text-sub);
+  font-size: 0.875rem;
+}
+
 /* ---------- 下のタブ ---------- */
 .tabbar {
   position: fixed;
