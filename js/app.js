@@ -702,6 +702,24 @@ async function init() {
 
   state.month = latestMonth();
   render();
+  showDebugInfo();
+}
+
+// 不具合調査用:画面上部の余白(時計の裏の高さ)などを設定画面に表示する
+function showDebugInfo() {
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:fixed;top:0;left:0;width:1px;visibility:hidden;height:env(safe-area-inset-top);";
+  document.body.appendChild(probe);
+  const top = probe.offsetHeight;
+  probe.remove();
+
+  const standalone =
+    window.navigator.standalone === true ||
+    window.matchMedia("(display-mode: standalone)").matches;
+
+  document.getElementById("debug-info").textContent =
+    "調査用:上部の余白 " + top + "px/ホーム画面から起動 " + (standalone ? "はい" : "いいえ") +
+    "/バージョン 2026103002";
 }
 
 init();

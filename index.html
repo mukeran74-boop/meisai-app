@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>明細メモ</title>
-  <link rel="stylesheet" href="css/style.css?v=2026103001">
+  <link rel="stylesheet" href="css/style.css?v=2026103002">
 </head>
 <body>
   <main>
@@ -129,6 +129,8 @@
       <button type="button" class="danger-button" id="clear-button">すべてのデータを削除</button>
 
       <p class="note">データはこのiPhoneの中だけに保存しています。</p>
+      <!-- 不具合調査用:画面上部の余白などを表示する(調査が終わったら消す) -->
+      <p class="note" id="debug-info"></p>
     </section>
   </main>
 
@@ -151,9 +153,9 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/db.js?v=2026103001"></script>
-  <script src="js/csv.js?v=2026103001"></script>
-  <script src="js/image.js?v=2026103001"></script>
-  <script src="js/app.js?v=2026103001"></script>
+  <script src="js/db.js?v=2026103002"></script>
+  <script src="js/csv.js?v=2026103002"></script>
+  <script src="js/image.js?v=2026103002"></script>
+  <script src="js/app.js?v=2026103002"></script>
 </body>
 </html>
