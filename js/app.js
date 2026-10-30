@@ -753,6 +753,9 @@ async function init() {
   applyTheme(loadTheme());
   requestPersistentStorage();
 
+  // 設定画面に今の版を表示する(更新が反映されたかの確認用)
+  document.getElementById("app-version").textContent = "バージョン " + APP_VERSION;
+
   await loadShops(); // お店の辞書を読み込む
   renderShopList();
 
