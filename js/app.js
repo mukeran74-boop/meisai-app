@@ -690,6 +690,7 @@ document.querySelectorAll("#theme-switch button").forEach(function (button) {
 // ---------- アプリを開いたときの処理 ----------
 
 async function init() {
+  applySafeTop();
   applyTheme(loadTheme());
   requestPersistentStorage();
 
@@ -702,24 +703,33 @@ async function init() {
 
   state.month = latestMonth();
   render();
-  showDebugInfo();
 }
 
-// 不具合調査用:画面上部の余白(時計の裏の高さ)などを設定画面に表示する
-function showDebugInfo() {
+// ---------- 画面上部(時計の裏)の余白を決める ----------
+// 本来はiPhoneが「時計の裏の高さ」を教えてくれるが、
+// ホーム画面から開いたときに 0 と答える場合があった(調査で確認)。
+// そのときは画面の大きさから高さを決めて、時計と文字が重ならないようにする。
+function applySafeTop() {
+  // iPhoneが教えてくれる高さを測る
   const probe = document.createElement("div");
   probe.style.cssText = "position:fixed;top:0;left:0;width:1px;visibility:hidden;height:env(safe-area-inset-top);";
   document.body.appendChild(probe);
-  const top = probe.offsetHeight;
+  const reported = probe.offsetHeight;
   probe.remove();
 
+  // ホーム画面から開いているか
   const standalone =
     window.navigator.standalone === true ||
     window.matchMedia("(display-mode: standalone)").matches;
 
-  document.getElementById("debug-info").textContent =
-    "調査用:上部の余白 " + top + "px/ホーム画面から起動 " + (standalone ? "はい" : "いいえ") +
-    "/バージョン 2026103002";
+  let safeTop = reported;
+  if (reported === 0 && standalone) {
+    // ノッチやダイナミックアイランドのある機種(縦の長さ812以上)は約50px、
+    // それより前の機種(ホームボタンあり)は約20px
+    safeTop = Math.max(window.screen.width, window.screen.height) >= 812 ? 50 : 20;
+  }
+
+  document.documentElement.style.setProperty("--safe-top", safeTop + "px");
 }
 
 init();

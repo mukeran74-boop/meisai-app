@@ -63,8 +63,9 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
   font-size: 1rem;
   line-height: 1.6;
-  /* iPhoneの上部(時計など)と重ならないように余白をとる */
-  padding-top: env(safe-area-inset-top);
+  /* iPhoneの上部(時計など)と重ならないように余白をとる
+     --safe-top は app.js で決める(iPhoneが高さを0と答える場合があるため) */
+  padding-top: var(--safe-top, env(safe-area-inset-top));
 }
 
 /* 画面上部(時計や電池の表示の裏)に背景色の帯を置き、
@@ -75,7 +76,7 @@ body::before {
   top: 0;
   left: 0;
   right: 0;
-  height: env(safe-area-inset-top);
+  height: var(--safe-top, env(safe-area-inset-top));
   background: var(--bg);
   z-index: 10;
 }
