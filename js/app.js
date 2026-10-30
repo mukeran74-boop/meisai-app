@@ -14,7 +14,37 @@ const state = {
   transactions: [], // 保存されている取引すべて
   month: currentMonth(), // 表示中の月 "2026-10"
   source: "all", // 一覧で表示する支払い元 "all" / "rakuten" / "paypay"
+  onlyUnconfirmed: false, // true のときは未確認の取引だけを一覧に出す
+  detailId: null, // 詳細画面で表示中の取引の id
 };
+
+// 写真を画面に表示するための一時的なURLを覚えておく(取引の id → URL)
+const imageURLs = new Map();
+
+// 写真の表示用URLを用意する(一度作ったものは使い回す)
+async function getImageURL(id) {
+  if (imageURLs.has(id)) return imageURLs.get(id);
+  const blob = await getImage(id);
+  if (!blob) return null;
+  const url = URL.createObjectURL(blob);
+  imageURLs.set(id, url);
+  return url;
+}
+
+// 写真を差し替え・削除したときに、古いURLを片付ける
+function forgetImageURL(id) {
+  if (imageURLs.has(id)) {
+    URL.revokeObjectURL(imageURLs.get(id));
+    imageURLs.delete(id);
+  }
+}
+
+// id から取引を探す
+function findTransaction(id) {
+  return state.transactions.find(function (t) {
+    return t.id === id;
+  });
+}
 
 // 支払い元の表示名
 const SOURCE_NAMES = {
@@ -92,8 +122,10 @@ function showScreen(screenId) {
   document.querySelectorAll(".screen").forEach(function (screen) {
     screen.classList.toggle("is-active", screen.id === screenId);
   });
+  // 詳細画面は「取引」タブの中の画面として扱う
+  const activeTab = screenId === "screen-detail" ? "screen-list" : screenId;
   tabs.forEach(function (tab) {
-    tab.classList.toggle("is-active", tab.dataset.target === screenId);
+    tab.classList.toggle("is-active", tab.dataset.target === activeTab);
   });
   window.scrollTo(0, 0);
 }
@@ -167,6 +199,10 @@ function renderList() {
   if (state.source !== "all") {
     list = list.filter(function (t) { return t.source === state.source; });
   }
+  if (state.onlyUnconfirmed) {
+    list = list.filter(function (t) { return t.status === "unconfirmed"; });
+  }
+  document.getElementById("unconfirmed-filter").classList.toggle("is-on", state.onlyUnconfirmed);
 
   // 日付・時刻の新しい順に並べる
   list.sort(function (a, b) {
@@ -184,7 +220,9 @@ function renderList() {
   if (list.length === 0) {
     const li = document.createElement("li");
     li.className = "empty";
-    li.innerHTML = '<p class="empty-text">この月の取引はありません。</p>';
+    li.innerHTML = state.onlyUnconfirmed
+      ? '<p class="empty-text">この月の未確認の取引はありません。</p>'
+      : '<p class="empty-text">この月の取引はありません。</p>';
     ul.appendChild(li);
     return;
   }
@@ -199,10 +237,25 @@ function createTransactionRow(t) {
   const li = document.createElement("li");
   li.className = "tx";
 
-  // 画像の代わりのアイコン(店名の1文字目)
+  // タップすると詳細画面を開く
+  li.addEventListener("click", function () {
+    openDetail(t.id);
+  });
+
+  // 写真があれば写真、なければ仮のアイコン(店名の1文字目)
   const icon = document.createElement("div");
   icon.className = "tx-icon " + t.source;
   icon.textContent = t.name.charAt(0);
+  if (t.hasImage) {
+    getImageURL(t.id).then(function (url) {
+      if (!url) return;
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = "";
+      icon.textContent = "";
+      icon.appendChild(img);
+    });
+  }
 
   // 店名と日付など
   const body = document.createElement("div");
@@ -213,7 +266,8 @@ function createTransactionRow(t) {
   const sub = document.createElement("div");
   sub.className = "tx-sub";
   const md = Number(t.date.slice(5, 7)) + "/" + Number(t.date.slice(8, 10));
-  sub.textContent = md + (t.time ? " " + t.time : "") + "・" + SOURCE_NAMES[t.source];
+  // メモがあればメモ、なければ支払い元を表示する
+  sub.textContent = md + (t.time ? " " + t.time : "") + "・" + (t.memo || SOURCE_NAMES[t.source]);
   if (t.status === "unconfirmed") {
     const mark = document.createElement("span");
     mark.className = "unconfirmed";
@@ -255,9 +309,17 @@ document.querySelectorAll(".month-next").forEach(function (button) {
   });
 });
 
-// ホームの「未確認 ◯件」を押したら一覧へ
+// ホームの「未確認 ◯件」を押したら、未確認だけの一覧へ
 document.getElementById("home-unconfirmed").addEventListener("click", function () {
+  state.onlyUnconfirmed = true;
+  setSourceFilter("all");
   showScreen("screen-list");
+});
+
+// 一覧の「未確認だけ表示」を押すたびに切り替える
+document.getElementById("unconfirmed-filter").addEventListener("click", function () {
+  state.onlyUnconfirmed = !state.onlyUnconfirmed;
+  renderList();
 });
 
 // ---------- 支払い元の切り替え(一覧画面) ----------
@@ -385,6 +447,187 @@ function showImportResult(text, isError) {
   box.classList.toggle("is-error", isError);
 }
 
+// ---------- 取引の詳細画面 ----------
+
+// 詳細画面を開く
+function openDetail(id) {
+  state.detailId = id;
+  hideDetailMessage();
+  renderDetail();
+  showScreen("screen-detail");
+}
+
+// 詳細画面の中身を描く
+async function renderDetail() {
+  const t = findTransaction(state.detailId);
+  if (!t) return;
+
+  // 写真(なければ仮のアイコン)
+  const photo = document.getElementById("detail-photo");
+  photo.innerHTML = "";
+  photo.className = "detail-photo";
+  if (t.hasImage) {
+    const url = await getImageURL(t.id);
+    if (url) {
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = t.name + "の写真";
+      photo.appendChild(img);
+    }
+  } else {
+    photo.classList.add("is-empty", t.source);
+    const letter = document.createElement("span");
+    letter.textContent = t.name.charAt(0);
+    const hint = document.createElement("span");
+    hint.className = "photo-hint";
+    hint.textContent = "写真はまだありません";
+    photo.append(letter, hint);
+  }
+  document.getElementById("photo-delete").hidden = !t.hasImage;
+
+  // 店名・明細の元の表記・金額
+  document.getElementById("detail-name").textContent = t.name;
+  const raw = document.getElementById("detail-raw");
+  raw.textContent = "明細の表記:" + t.rawName;
+  raw.hidden = t.rawName === t.name;
+  const amount = document.getElementById("detail-amount");
+  amount.textContent = yen(t.amount);
+  amount.classList.toggle("minus", t.amount < 0);
+
+  // 日時・支払い元・支払い方法
+  const parts = t.date.split("-").map(Number);
+  const rows = [
+    ["日時", parts[0] + "年" + parts[1] + "月" + parts[2] + "日" + (t.time ? " " + t.time : "")],
+    ["支払い元", SOURCE_NAMES[t.source]],
+    ["支払い方法", t.method || "-"],
+  ];
+  const info = document.getElementById("detail-info");
+  info.innerHTML = "";
+  rows.forEach(function (row) {
+    const dt = document.createElement("dt");
+    dt.textContent = row[0];
+    const dd = document.createElement("dd");
+    dd.textContent = row[1];
+    info.append(dt, dd);
+  });
+
+  // 確認の状態とボタン
+  const confirmed = t.status === "confirmed";
+  const status = document.getElementById("detail-status");
+  status.textContent = confirmed ? "確認済み" : "未確認";
+  status.classList.toggle("is-unconfirmed", !confirmed);
+  document.getElementById("detail-confirm").textContent = confirmed ? "未確認に戻す" : "確認済みにする";
+
+  // メモ
+  document.getElementById("detail-memo").value = t.memo || "";
+}
+
+// 取引を保存して、画面をすべて描き直す
+async function saveTransaction(t, message) {
+  try {
+    await updateTransaction(t);
+    render();
+    await renderDetail();
+    showDetailMessage(message, false);
+  } catch (error) {
+    console.error(error);
+    showDetailMessage("保存できませんでした。もう一度お試しください。", true);
+  }
+}
+
+function showDetailMessage(text, isError) {
+  const box = document.getElementById("detail-message");
+  box.hidden = false;
+  box.textContent = text;
+  box.classList.toggle("is-error", isError);
+}
+
+function hideDetailMessage() {
+  document.getElementById("detail-message").hidden = true;
+}
+
+// 戻るボタン
+document.getElementById("detail-back").addEventListener("click", function () {
+  showScreen("screen-list");
+});
+
+// 「確認済みにする」/「未確認に戻す」
+document.getElementById("detail-confirm").addEventListener("click", function () {
+  const t = findTransaction(state.detailId);
+  if (!t) return;
+  t.status = t.status === "confirmed" ? "unconfirmed" : "confirmed";
+  saveTransaction(t, t.status === "confirmed" ? "確認済みにしました。" : "未確認に戻しました。");
+});
+
+// メモを保存(メモを書いたら確認済みにする)
+document.getElementById("memo-save").addEventListener("click", function () {
+  const t = findTransaction(state.detailId);
+  if (!t) return;
+  t.memo = document.getElementById("detail-memo").value.trim();
+  let message = "メモを保存しました。";
+  if (t.memo !== "" && t.status === "unconfirmed") {
+    t.status = "confirmed";
+    message = "メモを保存し、確認済みにしました。";
+  }
+  saveTransaction(t, message);
+});
+
+// 写真を選ぶ / カメラで撮る(隠してある選択欄を呼び出す)
+document.getElementById("photo-pick").addEventListener("click", function () {
+  document.getElementById("photo-input").click();
+});
+document.getElementById("photo-camera").addEventListener("click", function () {
+  document.getElementById("camera-input").click();
+});
+
+// 写真が選ばれたら、縮小して保存する(写真を付けたら確認済みにする)
+async function handlePhoto(input) {
+  const file = input.files[0];
+  input.value = ""; // 同じ写真をもう一度選んでも反応するように空にする
+  const t = findTransaction(state.detailId);
+  if (!file || !t) return;
+
+  showDetailMessage("写真を保存しています…", false);
+  try {
+    const blob = await resizeImage(file);
+    await putImage(t.id, blob);
+    forgetImageURL(t.id); // 前の写真の表示用URLを片付ける
+    t.hasImage = true;
+    let message = "写真を保存しました。";
+    if (t.status === "unconfirmed") {
+      t.status = "confirmed";
+      message = "写真を保存し、確認済みにしました。";
+    }
+    await saveTransaction(t, message);
+  } catch (error) {
+    console.error(error);
+    showDetailMessage(error.message || "写真を保存できませんでした。", true);
+  }
+}
+
+document.getElementById("photo-input").addEventListener("change", function () {
+  handlePhoto(this);
+});
+document.getElementById("camera-input").addEventListener("change", function () {
+  handlePhoto(this);
+});
+
+// 写真を削除(確認の状態はそのまま)
+document.getElementById("photo-delete").addEventListener("click", async function () {
+  const t = findTransaction(state.detailId);
+  if (!t) return;
+  if (!window.confirm("この取引の写真を削除しますか?")) return;
+  try {
+    await deleteImage(t.id);
+    forgetImageURL(t.id);
+    t.hasImage = false;
+    await saveTransaction(t, "写真を削除しました。");
+  } catch (error) {
+    console.error(error);
+    showDetailMessage("写真を削除できませんでした。", true);
+  }
+});
+
 // ---------- すべてのデータを削除 ----------
 
 document.getElementById("clear-button").addEventListener("click", async function () {
@@ -393,6 +636,7 @@ document.getElementById("clear-button").addEventListener("click", async function
 
   try {
     await clearTransactions();
+    Array.from(imageURLs.keys()).forEach(forgetImageURL);
     state.transactions = [];
     state.month = currentMonth();
     document.getElementById("import-result").hidden = true;

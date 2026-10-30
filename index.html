@@ -55,8 +55,51 @@
         <button type="button" data-source="paypay">PayPay</button>
       </div>
 
-      <p class="list-total" id="list-total"></p>
+      <div class="list-toolbar">
+        <p class="list-total" id="list-total"></p>
+        <!-- 押すたびに「未確認だけ」と「すべて」を切り替える -->
+        <button type="button" class="filter-chip" id="unconfirmed-filter">未確認だけ表示</button>
+      </div>
       <ul class="tx-list" id="tx-list"></ul>
+    </section>
+
+    <!-- ===== 取引の詳細画面(一覧の取引をタップすると開く) ===== -->
+    <section id="screen-detail" class="screen">
+      <button type="button" class="back-button" id="detail-back">‹ 戻る</button>
+
+      <!-- 写真(なければ仮のアイコン) -->
+      <div class="detail-photo" id="detail-photo"></div>
+
+      <div class="detail-head">
+        <p class="detail-name" id="detail-name"></p>
+        <p class="detail-raw" id="detail-raw"></p>
+        <p class="detail-amount" id="detail-amount"></p>
+      </div>
+
+      <!-- 日時・支払い元・支払い方法 -->
+      <dl class="detail-info" id="detail-info"></dl>
+
+      <!-- 確認の状態 -->
+      <div class="detail-status">
+        <span class="status-label" id="detail-status"></span>
+        <button type="button" class="secondary-button" id="detail-confirm"></button>
+      </div>
+
+      <p class="section-label">写真</p>
+      <div class="button-row">
+        <button type="button" class="secondary-button" id="photo-pick">写真を選ぶ</button>
+        <button type="button" class="secondary-button" id="photo-camera">カメラで撮る</button>
+      </div>
+      <button type="button" class="text-danger-button" id="photo-delete" hidden>写真を削除</button>
+      <!-- 本物の選択欄は隠し、上のボタンから呼び出す -->
+      <input type="file" id="photo-input" accept="image/*" hidden>
+      <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
+
+      <p class="section-label">メモ</p>
+      <textarea class="memo" id="detail-memo" rows="3" placeholder="通勤用のイヤホン"></textarea>
+      <button type="button" class="primary-button" id="memo-save">メモを保存</button>
+
+      <p class="detail-message" id="detail-message" hidden></p>
     </section>
 
     <!-- ===== グラフ画面 ===== -->
@@ -110,6 +153,7 @@
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
   <script src="js/db.js"></script>
   <script src="js/csv.js"></script>
+  <script src="js/image.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

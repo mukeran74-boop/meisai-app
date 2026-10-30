@@ -349,6 +349,213 @@ main {
   cursor: pointer;
 }
 
+/* ---------- 一覧の上の行(件数と「未確認だけ表示」) ---------- */
+.list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.list-toolbar .list-total {
+  margin: 0;
+}
+
+.filter-chip {
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-sub);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+}
+
+.filter-chip.is-on {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border-color: transparent;
+}
+
+.tx {
+  cursor: pointer;
+}
+
+/* 一覧のアイコンに写真を入れたとき */
+.tx-icon {
+  overflow: hidden;
+}
+
+.tx-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 縦横比を保ったまま、四角に収まるよう切り取る */
+}
+
+/* ---------- 取引の詳細画面 ---------- */
+.back-button {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 1rem;
+  padding: 0.75rem 0;
+  cursor: pointer;
+}
+
+.detail-photo {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.detail-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 写真がないときは、支払い元の色で大きく1文字表示する */
+.detail-photo.is-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #ffffff;
+  font-size: 3rem;
+  font-weight: 600;
+  border: none;
+}
+
+.detail-photo.is-empty.rakuten { background: var(--rakuten); }
+.detail-photo.is-empty.paypay { background: var(--paypay); }
+
+.detail-photo .photo-hint {
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.detail-head {
+  margin: 1rem 0 0.5rem;
+}
+
+.detail-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  word-break: break-all; /* 長い英字の店名も折り返す */
+}
+
+.detail-raw {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  margin: 0.125rem 0 0;
+  word-break: break-all;
+}
+
+.detail-amount {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0.25rem 0 0;
+}
+
+.detail-amount.minus {
+  color: var(--paypay);
+}
+
+.detail-info {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.375rem 1rem;
+  font-size: 0.875rem;
+  margin: 0.75rem 0;
+}
+
+.detail-info dt {
+  color: var(--text-sub);
+}
+
+.detail-info dd {
+  margin: 0;
+}
+
+.detail-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.625rem 0.75rem;
+}
+
+.status-label {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.status-label.is-unconfirmed {
+  color: var(--warning);
+}
+
+.button-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.button-row .secondary-button {
+  flex: 1;
+}
+
+.secondary-button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+.text-danger-button {
+  border: none;
+  background: transparent;
+  color: #e24b4a;
+  font-size: 0.875rem;
+  padding: 0.5rem 0;
+  cursor: pointer;
+}
+
+.memo {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem; /* 16px未満だとiPhoneで入力時に勝手に拡大されるため */
+  padding: 0.5rem 0.75rem;
+  resize: vertical;
+}
+
+.detail-message {
+  font-size: 0.875rem;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin: 0.75rem 0 0;
+}
+
+.detail-message.is-error {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
 /* ---------- 下のタブ ---------- */
 .tabbar {
   position: fixed;

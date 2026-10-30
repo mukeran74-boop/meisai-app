@@ -1,24 +1,27 @@
 // =========================================================
 // db.js  データの保存(IndexedDB)
-// iPhoneのブラウザの中に取引データを保存する。
+// iPhoneのブラウザの中に取引データと写真を保存する。
 // サーバーには何も送らない。
 // =========================================================
 
 const DB_NAME = "meisai-db";
-const DB_VERSION = 1;
-const STORE = "transactions"; // 取引を入れる箱の名前
+const DB_VERSION = 2; // 写真用の箱を追加したので 1 → 2 に上げた
+const STORE = "transactions"; // 取引を入れる箱
+const IMAGE_STORE = "images"; // 写真を入れる箱(取引の id と同じ id で保存)
 
-// データベースを開く(初めてのときは箱を作る)
+// データベースを開く(初めてのときや、バージョンが上がったときは箱を作る)
 function openDB() {
   return new Promise(function (resolve, reject) {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    // 初回やバージョンが上がったときだけ呼ばれる
     request.onupgradeneeded = function () {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE)) {
-        // id を目印にして1件ずつ保存する
         db.createObjectStore(STORE, { keyPath: "id" });
+      }
+      if (!db.objectStoreNames.contains(IMAGE_STORE)) {
+        // 写真は { id, blob } の形で保存する
+        db.createObjectStore(IMAGE_STORE, { keyPath: "id" });
       }
     };
 
@@ -31,52 +34,82 @@ function openDB() {
   });
 }
 
-// 保存されている取引をすべて取り出す
-async function getAllTransactions() {
+// 1つの箱に対して読み書きする共通の手続き
+//  storeName: 箱の名前 / mode: "readonly" か "readwrite"
+//  work: 箱を受け取って処理をする関数(結果を返すときは request を返す)
+async function withStore(storeName, mode, work) {
   const db = await openDB();
   return new Promise(function (resolve, reject) {
-    const tx = db.transaction(STORE, "readonly");
-    const request = tx.objectStore(STORE).getAll();
-    request.onsuccess = function () {
-      resolve(request.result);
+    const tx = db.transaction(storeName, mode);
+    const request = work(tx.objectStore(storeName));
+    tx.oncomplete = function () {
+      resolve(request ? request.result : undefined);
     };
-    request.onerror = function () {
-      reject(request.error);
+    tx.onerror = function () {
+      reject(tx.error);
     };
+  });
+}
+
+// ---------- 取引 ----------
+
+// 保存されている取引をすべて取り出す
+function getAllTransactions() {
+  return withStore(STORE, "readonly", function (store) {
+    return store.getAll();
   });
 }
 
 // 取引をまとめて保存する(途中で失敗したら全部取り消される)
 async function addTransactions(items) {
   if (items.length === 0) return;
-  const db = await openDB();
-  return new Promise(function (resolve, reject) {
-    const tx = db.transaction(STORE, "readwrite");
-    const store = tx.objectStore(STORE);
+  return withStore(STORE, "readwrite", function (store) {
     items.forEach(function (item) {
       store.put(item);
     });
-    tx.oncomplete = function () {
-      resolve();
-    };
-    tx.onerror = function () {
-      reject(tx.error);
-    };
   });
 }
 
-// すべての取引を削除する(設定画面の「すべてのデータを削除」用)
+// 取引を1件更新する(メモ・確認済み・写真の有無など)
+function updateTransaction(item) {
+  return withStore(STORE, "readwrite", function (store) {
+    store.put(item);
+  });
+}
+
+// ---------- 写真 ----------
+
+// 写真を保存する
+function putImage(id, blob) {
+  return withStore(IMAGE_STORE, "readwrite", function (store) {
+    store.put({ id: id, blob: blob });
+  });
+}
+
+// 写真を取り出す(なければ null)
+async function getImage(id) {
+  const record = await withStore(IMAGE_STORE, "readonly", function (store) {
+    return store.get(id);
+  });
+  return record ? record.blob : null;
+}
+
+// 写真を削除する
+function deleteImage(id) {
+  return withStore(IMAGE_STORE, "readwrite", function (store) {
+    store.delete(id);
+  });
+}
+
+// ---------- すべて削除 ----------
+
+// 取引も写真もすべて削除する(設定画面の「すべてのデータを削除」用)
 async function clearTransactions() {
-  const db = await openDB();
-  return new Promise(function (resolve, reject) {
-    const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).clear();
-    tx.oncomplete = function () {
-      resolve();
-    };
-    tx.onerror = function () {
-      reject(tx.error);
-    };
+  await withStore(STORE, "readwrite", function (store) {
+    store.clear();
+  });
+  await withStore(IMAGE_STORE, "readwrite", function (store) {
+    store.clear();
   });
 }
 
