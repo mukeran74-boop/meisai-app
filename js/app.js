@@ -128,6 +128,10 @@ function showScreen(screenId) {
   if (["screen-shops", "screen-source", "screen-about"].indexOf(screenId) !== -1) {
     activeTab = "screen-settings";
   }
+  if (screenId === "screen-shop-edit") {
+    // 詳細画面から来たときは「取引」、辞書の一覧から来たときは「設定」のタブ
+    activeTab = shopEditReturn === "screen-detail" ? "screen-list" : "screen-settings";
+  }
   tabs.forEach(function (tab) {
     tab.classList.toggle("is-active", tab.dataset.target === activeTab);
   });
@@ -651,6 +655,10 @@ async function renderDetail() {
     ["カテゴリ", shop ? shop.category : "辞書に登録なし"],
   ];
   if (shop && shop.description) rows.push(["説明", shop.description]);
+
+  // お店の辞書のボタンの文字(登録の状態によって変える)
+  document.getElementById("detail-shop-edit").textContent =
+    shop && shop.custom ? "辞書の登録を編集" : shop ? "辞書の内容を変更" : "このお店を辞書に登録";
   const info = document.getElementById("detail-info");
   info.innerHTML = "";
   rows.forEach(function (row) {
@@ -801,6 +809,13 @@ function renderShopList() {
     const name = document.createElement("div");
     name.className = "tx-name";
     name.textContent = shop.name;
+    // 自分で登録したお店には印を付ける
+    if (shop.custom) {
+      const tag = document.createElement("span");
+      tag.className = "custom-tag";
+      tag.textContent = "自分で登録";
+      name.appendChild(tag);
+    }
     const sub = document.createElement("div");
     sub.className = "tx-sub";
     sub.textContent = shop.category + "・明細の表記に「" + shop.patterns.join("」「") + "」を含む";
@@ -810,6 +825,12 @@ function renderShopList() {
     body.append(name, sub, desc);
 
     li.append(icon, body);
+
+    // タップで編集(最初から入っているお店は、自分用の登録を作る)
+    li.addEventListener("click", function () {
+      if (shop.custom) openShopEditor({ shop: shop, returnTo: "screen-shops" });
+      else openShopEditor({ base: shop, returnTo: "screen-shops" });
+    });
     ul.appendChild(li);
   });
 }
@@ -826,12 +847,14 @@ document.getElementById("shops-back").addEventListener("click", function () {
 // ---------- すべてのデータを削除 ----------
 
 document.getElementById("clear-button").addEventListener("click", async function () {
-  const ok = window.confirm("読み込んだ明細をすべて削除します。元に戻せません。本当に削除しますか?");
+  const ok = window.confirm("読み込んだ明細・写真・メモと、自分で辞書に登録したお店をすべて削除します。元に戻せません。本当に削除しますか?");
   if (!ok) return;
 
   try {
     await clearTransactions();
     Array.from(imageURLs.keys()).forEach(forgetImageURL);
+    forgetCustomShops(); // 自分で登録したお店も消えたので、辞書を作り直す
+    renderShopList();
     state.transactions = [];
     state.month = currentMonth();
     document.getElementById("import-result").hidden = true;

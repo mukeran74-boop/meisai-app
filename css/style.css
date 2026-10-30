@@ -818,6 +818,65 @@ main {
   font-size: 0.875rem;
 }
 
+/* ---------- お店の辞書の登録・編集 ---------- */
+.wide-button {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.75rem;
+  color: var(--accent);
+}
+
+.shop-item {
+  cursor: pointer;
+}
+
+.custom-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  vertical-align: 0.1rem;
+}
+
+/* ジャンルの選択肢 */
+.category-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.category-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 0.25rem 0.75rem 0.25rem 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.category-chip.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.category-chip-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ---------- 設定画面の仕上げ ---------- */
 /* 項目をまとめて1つの枠に入れる */
 .settings-group {

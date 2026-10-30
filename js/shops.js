@@ -27,7 +27,27 @@ const CATEGORIES = {
   "車": { color: "#5f5e5a", path: "M5 16v-5l2-5h10l2 5v5M4 16h16M7 16v2M17 16v2M5 11h14" },
   "家電": { color: "#185fa5", path: "M4 6h16v11H4zM9 21h6M12 17v4" },
   "ゲーム": { color: "#534ab7", path: "M6 9h12a3 3 0 0 1 3 3v2a3 3 0 0 1-5 2l-1-1H9l-1 1a3 3 0 0 1-5-2v-2a3 3 0 0 1 3-3zM8 11v4M6 13h4M15 12h1M17 14h1" },
+  "その他": { color: "#73726c", path: "M6 12h.01M12 12h.01M18 12h.01" },
 };
+
+let builtinShops = []; // data/shops.json に書いてあるお店
+let customShops = []; // 自分でアプリから登録したお店(iPhoneの中に保存)
+
+// 調べやすい形にする(長い言葉から先に調べる。短い言葉が先に当たって別の店になるのを防ぐ)
+function prepareShop(shop) {
+  return Object.assign({}, shop, {
+    keys: shop.patterns
+      .map(function (p) { return p.normalize("NFKC").toUpperCase().trim(); })
+      .filter(function (p) { return p !== ""; })
+      .sort(function (a, b) { return b.length - a.length; }),
+  });
+}
+
+// 自分で登録したお店を先に調べる(最初から入っている辞書より優先する)
+function rebuildShopList() {
+  shopList = customShops.map(prepareShop).concat(builtinShops.map(prepareShop));
+  shopCache.clear();
+}
 
 // 辞書にないお店(見覚えのない取引かもしれないので「?」で目立たせる)
 const UNKNOWN_CATEGORY = { color: "#888780", path: "M9 9a3 3 0 1 1 4 3c-1 .5-1 1-1 2M12 18h.01" };
@@ -38,21 +58,43 @@ async function loadShops() {
     const response = await fetch("data/shops.json?v=" + APP_VERSION);
     if (!response.ok) throw new Error("HTTP " + response.status);
     const json = await response.json();
-
-    // 長い言葉から先に調べる(短い言葉が先に当たって別の店になるのを防ぐ)
-    shopList = json.shops.map(function (shop) {
-      return Object.assign({}, shop, {
-        keys: shop.patterns
-          .map(function (p) { return p.normalize("NFKC").toUpperCase(); })
-          .sort(function (a, b) { return b.length - a.length; }),
-      });
-    });
-    shopCache.clear();
+    builtinShops = json.shops;
   } catch (error) {
     // 辞書が読めなくても、店名をそのまま表示すれば使えるので止めない
     console.warn("お店の辞書を読み込めませんでした", error);
-    shopList = [];
+    builtinShops = [];
   }
+
+  try {
+    customShops = await getCustomShops();
+  } catch (error) {
+    console.warn("自分で登録したお店を読み込めませんでした", error);
+    customShops = [];
+  }
+
+  rebuildShopList();
+}
+
+// 自分で登録したお店を保存する(新しく登録・編集の両方)
+async function saveCustomShop(shop) {
+  await putCustomShop(shop);
+  const index = customShops.findIndex(function (s) { return s.id === shop.id; });
+  if (index === -1) customShops.unshift(shop);
+  else customShops[index] = shop;
+  rebuildShopList();
+}
+
+// 自分で登録したお店を削除する
+async function removeCustomShop(id) {
+  await deleteCustomShop(id);
+  customShops = customShops.filter(function (s) { return s.id !== id; });
+  rebuildShopList();
+}
+
+// 「すべてのデータを削除」のあとに呼ぶ
+function forgetCustomShops() {
+  customShops = [];
+  rebuildShopList();
 }
 
 // 取引に当てはまるお店を探す(なければ null)

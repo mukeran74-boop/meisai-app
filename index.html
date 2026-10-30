@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>明細メモ</title>
-  <link rel="stylesheet" href="css/style.css?v=2026103009">
+  <link rel="stylesheet" href="css/style.css?v=2026103010">
 </head>
 <body>
   <main>
@@ -81,6 +81,9 @@
 
       <!-- 日時・支払い元・支払い方法 -->
       <dl class="detail-info" id="detail-info"></dl>
+
+      <!-- お店の辞書に登録・編集(文字は app.js で切り替える) -->
+      <button type="button" class="secondary-button wide-button" id="detail-shop-edit">このお店を辞書に登録</button>
 
       <!-- 確認の状態 -->
       <div class="detail-status">
@@ -220,7 +223,34 @@
         <h1>お店の辞書</h1>
       </header>
       <p class="hint" style="text-align:left">明細の店名にここの言葉が含まれていると、分かりやすい名前とアイコンで表示します。辞書に当てはまっても、自動で確認済みにはしません。</p>
+      <button type="button" class="primary-button" id="shop-add">+ お店を追加</button>
       <ul class="tx-list" id="shop-list"></ul>
+    </section>
+
+    <!-- ===== お店の辞書の登録・編集 ===== -->
+    <section id="screen-shop-edit" class="screen">
+      <button type="button" class="back-button" id="shop-edit-back">‹ 戻る</button>
+      <header class="screen-header">
+        <h1 id="shop-edit-title">お店を辞書に登録</h1>
+      </header>
+      <p class="note" id="shop-edit-lead" hidden></p>
+
+      <p class="section-label">明細の店名に含まれる言葉</p>
+      <input type="text" class="text-input" id="shop-edit-pattern" placeholder="コンビニエンスA">
+      <p class="note">駅前店・大学通り店のように店舗によって名前が違うときは、共通する部分だけを入れると1つのお店にまとまります。複数あるときは「、」で区切ります。</p>
+
+      <p class="section-label">表示名</p>
+      <input type="text" class="text-input" id="shop-edit-name" maxlength="30" placeholder="いつものコンビニ">
+
+      <p class="section-label">ジャンル</p>
+      <div class="category-picker" id="shop-edit-category"></div>
+
+      <p class="section-label">説明(なくてもOK)</p>
+      <textarea class="memo" id="shop-edit-desc" rows="3" placeholder="月額980円の音楽サービス"></textarea>
+
+      <button type="button" class="primary-button" id="shop-edit-save">保存</button>
+      <p class="detail-message" id="shop-edit-message" hidden></p>
+      <button type="button" class="text-danger-button" id="shop-edit-delete" hidden>このお店を辞書から削除</button>
     </section>
   </main>
 
@@ -266,14 +296,15 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/update.js?v=2026103009"></script>
-  <script src="js/db.js?v=2026103009"></script>
-  <script src="js/csv.js?v=2026103009"></script>
-  <script src="js/image.js?v=2026103009"></script>
-  <script src="js/shops.js?v=2026103009"></script>
-  <script src="js/analysis.js?v=2026103009"></script>
-  <script src="js/viewer.js?v=2026103009"></script>
-  <script src="js/settings.js?v=2026103009"></script>
-  <script src="js/app.js?v=2026103009"></script>
+  <script src="js/update.js?v=2026103010"></script>
+  <script src="js/db.js?v=2026103010"></script>
+  <script src="js/csv.js?v=2026103010"></script>
+  <script src="js/image.js?v=2026103010"></script>
+  <script src="js/shops.js?v=2026103010"></script>
+  <script src="js/analysis.js?v=2026103010"></script>
+  <script src="js/viewer.js?v=2026103010"></script>
+  <script src="js/settings.js?v=2026103010"></script>
+  <script src="js/shopedit.js?v=2026103010"></script>
+  <script src="js/app.js?v=2026103010"></script>
 </body>
 </html>
