@@ -67,6 +67,19 @@ body {
   padding-top: env(safe-area-inset-top);
 }
 
+/* 画面上部(時計や電池の表示の裏)に背景色の帯を置き、
+   スクロールしたときに文字が時計と重なって見えないようにする */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: var(--bg);
+  z-index: 10;
+}
+
 button {
   font: inherit;
   color: inherit;
