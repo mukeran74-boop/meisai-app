@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>明細メモ</title>
-  <link rel="stylesheet" href="css/style.css?v=2026103006">
+  <link rel="stylesheet" href="css/style.css?v=2026103007">
 </head>
 <body>
   <main>
@@ -30,6 +30,9 @@
 
       <!-- 支払い元ごとのまとめ(タップでその支払い元の一覧へ) -->
       <div id="home-sources"></div>
+
+      <!-- 分析コメント(1行だけ。タップでグラフ画面へ) -->
+      <button type="button" class="home-comment" id="home-comment" hidden></button>
 
       <!-- 読み込みの結果をここに表示する -->
       <p class="import-result" id="import-result" hidden></p>
@@ -104,12 +107,26 @@
 
     <!-- ===== グラフ画面 ===== -->
     <section id="screen-graph" class="screen">
-      <header class="screen-header">
-        <h1>グラフ</h1>
-      </header>
-      <div class="empty">
-        <p class="empty-text">月ごとのグラフはこれから作ります。</p>
+      <div class="month-nav">
+        <button type="button" class="month-prev" aria-label="前の月">‹</button>
+        <span class="month-label"></span>
+        <button type="button" class="month-next" aria-label="次の月">›</button>
       </div>
+
+      <!-- 月ごとの利用額(棒グラフ)。棒をタップするとその月に切り替わる -->
+      <h2 class="graph-title">月ごとの利用額</h2>
+      <div class="bar-chart" id="bar-chart"></div>
+      <p class="legend">
+        <span class="source-dot" style="background: var(--rakuten)"></span>楽天カード
+        <span class="source-dot" style="background: var(--paypay); margin-left: 0.75rem"></span>PayPay
+      </p>
+
+      <!-- この月の内訳(円グラフ) -->
+      <h2 class="graph-title" id="pie-title">この月の内訳</h2>
+      <div class="pie-area" id="pie-area"></div>
+
+      <!-- 分析コメント -->
+      <ul class="comments" id="graph-comments"></ul>
     </section>
 
     <!-- ===== 設定画面 ===== -->
@@ -167,11 +184,12 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/update.js?v=2026103006"></script>
-  <script src="js/db.js?v=2026103006"></script>
-  <script src="js/csv.js?v=2026103006"></script>
-  <script src="js/image.js?v=2026103006"></script>
-  <script src="js/shops.js?v=2026103006"></script>
-  <script src="js/app.js?v=2026103006"></script>
+  <script src="js/update.js?v=2026103007"></script>
+  <script src="js/db.js?v=2026103007"></script>
+  <script src="js/csv.js?v=2026103007"></script>
+  <script src="js/image.js?v=2026103007"></script>
+  <script src="js/shops.js?v=2026103007"></script>
+  <script src="js/analysis.js?v=2026103007"></script>
+  <script src="js/app.js?v=2026103007"></script>
 </body>
 </html>

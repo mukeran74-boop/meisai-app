@@ -138,8 +138,135 @@ function render() {
   renderMonthNav();
   renderHome();
   renderList();
+  renderGraph();
   renderTabBadge();
 }
+
+// ---------- グラフ画面 ----------
+
+function renderGraph() {
+  renderBarChart();
+  renderPieChart();
+  renderComments();
+}
+
+// 月ごとの利用額(棒グラフ):表示中の月までの6か月分
+// 棒は div の高さを変えて描く(楽天カードとPayPayを積み上げる)
+function renderBarChart() {
+  const data = monthlyTotals(recentMonths(state.month, 6));
+  const max = Math.max.apply(null, data.map(function (d) { return d.total; }).concat([1]));
+
+  const chart = document.getElementById("bar-chart");
+  chart.innerHTML = "";
+
+  data.forEach(function (d) {
+    const col = document.createElement("button");
+    col.type = "button";
+    col.className = "bar-col" + (d.month === state.month ? " is-selected" : "");
+    col.setAttribute("aria-label", monthLabel(d.month) + " " + yen(d.total));
+
+    // 棒の上の金額
+    const value = document.createElement("span");
+    value.className = "bar-value";
+    value.textContent = d.total > 0 ? shortYen(d.total) : "";
+
+    // 棒(上がPayPay、下が楽天カード)
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    const paypay = document.createElement("div");
+    paypay.style.height = (Math.max(d.paypay, 0) / max) * 100 + "%";
+    paypay.style.background = "var(--paypay)";
+    const rakuten = document.createElement("div");
+    rakuten.style.height = (Math.max(d.rakuten, 0) / max) * 100 + "%";
+    rakuten.style.background = "var(--rakuten)";
+    bar.append(paypay, rakuten);
+
+    // 月の名前
+    const label = document.createElement("span");
+    label.className = "bar-label";
+    label.textContent = Number(d.month.slice(5)) + "月";
+
+    col.append(value, bar, label);
+
+    // タップするとその月に切り替える
+    col.addEventListener("click", function () {
+      state.month = d.month;
+      render();
+    });
+
+    chart.appendChild(col);
+  });
+}
+
+// この月の内訳(円グラフ):お店ごとの割合を、CSSの conic-gradient で描く
+function renderPieChart() {
+  document.getElementById("pie-title").textContent =
+    Number(state.month.slice(5)) + "月の内訳(お店ごと)";
+
+  const area = document.getElementById("pie-area");
+  area.innerHTML = "";
+
+  const pie = pieSlices(transactionsOfMonth(state.month));
+  if (pie.slices.length === 0) {
+    area.innerHTML = '<p class="empty-text">この月の取引はありません。</p>';
+    return;
+  }
+
+  // 例:conic-gradient(#7f77dd 0% 32%, #1d9e75 32% 52%, ...)
+  let start = 0;
+  const parts = pie.slices.map(function (s) {
+    const end = start + (s.amount / pie.total) * 100;
+    const part = s.color + " " + start + "% " + end + "%";
+    start = end;
+    return part;
+  });
+  const circle = document.createElement("div");
+  circle.className = "pie";
+  circle.style.background = "conic-gradient(" + parts.join(", ") + ")";
+
+  // 凡例(色・お店の名前・割合・金額)
+  const legend = document.createElement("ul");
+  legend.className = "pie-legend";
+  pie.slices.forEach(function (s) {
+    const li = document.createElement("li");
+    const dot = document.createElement("span");
+    dot.className = "source-dot";
+    dot.style.background = s.color;
+    const name = document.createElement("span");
+    name.className = "pie-name";
+    name.textContent = s.name;
+    const value = document.createElement("span");
+    value.className = "pie-value";
+    value.textContent = s.percent + "%・" + yen(s.amount);
+    li.append(dot, name, value);
+    legend.appendChild(li);
+  });
+
+  area.append(circle, legend);
+}
+
+// 分析コメント(グラフ画面とホーム画面)
+function renderComments() {
+  const comments = analysisComments(state.month);
+
+  const ul = document.getElementById("graph-comments");
+  ul.innerHTML = "";
+  comments.forEach(function (text) {
+    const li = document.createElement("li");
+    li.textContent = text;
+    ul.appendChild(li);
+  });
+
+  // ホーム画面には一番大事な1行だけ出す
+  const home = document.getElementById("home-comment");
+  home.hidden = comments.length === 0;
+  home.textContent = comments[0] || "";
+}
+
+// ホームの分析コメントを押したらグラフ画面へ
+document.getElementById("home-comment").addEventListener("click", function () {
+  showScreen("screen-graph");
+});
 
 // 月の表示(ホームと取引の両方)
 function renderMonthNav() {
