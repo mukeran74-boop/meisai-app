@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>明細メモ</title>
-  <link rel="stylesheet" href="css/style.css?v=2026103010">
+  <link rel="stylesheet" href="css/style.css?v=2026103011">
 </head>
 <body>
   <main>
@@ -127,6 +127,8 @@
       <!-- この月の内訳(円グラフ) -->
       <h2 class="graph-title" id="pie-title">この月の内訳</h2>
       <div class="pie-area" id="pie-area"></div>
+      <!-- 選んだジャンルの中のお店の割合 -->
+      <div class="pie-detail" id="pie-detail"></div>
 
       <!-- 分析コメント -->
       <ul class="comments" id="graph-comments"></ul>
@@ -296,15 +298,15 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/update.js?v=2026103010"></script>
-  <script src="js/db.js?v=2026103010"></script>
-  <script src="js/csv.js?v=2026103010"></script>
-  <script src="js/image.js?v=2026103010"></script>
-  <script src="js/shops.js?v=2026103010"></script>
-  <script src="js/analysis.js?v=2026103010"></script>
-  <script src="js/viewer.js?v=2026103010"></script>
-  <script src="js/settings.js?v=2026103010"></script>
-  <script src="js/shopedit.js?v=2026103010"></script>
-  <script src="js/app.js?v=2026103010"></script>
+  <script src="js/update.js?v=2026103011"></script>
+  <script src="js/db.js?v=2026103011"></script>
+  <script src="js/csv.js?v=2026103011"></script>
+  <script src="js/image.js?v=2026103011"></script>
+  <script src="js/shops.js?v=2026103011"></script>
+  <script src="js/analysis.js?v=2026103011"></script>
+  <script src="js/viewer.js?v=2026103011"></script>
+  <script src="js/settings.js?v=2026103011"></script>
+  <script src="js/shopedit.js?v=2026103011"></script>
+  <script src="js/app.js?v=2026103011"></script>
 </body>
 </html>

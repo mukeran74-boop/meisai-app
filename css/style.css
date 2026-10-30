@@ -669,6 +669,55 @@ main {
   white-space: nowrap;
 }
 
+/* 円グラフの凡例をタップできるようにする */
+.pie-item {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0.2rem 0.3rem !important;
+}
+
+.pie-item.is-selected {
+  background: var(--accent-bg);
+}
+
+/* 選んだジャンルの中のお店(横棒) */
+.pie-detail {
+  margin-top: 0.75rem;
+}
+
+.pie-detail .hint {
+  text-align: left;
+}
+
+.pie-detail-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.share-row {
+  margin-bottom: 0.5rem;
+}
+
+.share-label {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.share-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  margin-top: 0.2rem;
+}
+
+.share-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
 /* 分析コメント */
 .comments {
   list-style: none;

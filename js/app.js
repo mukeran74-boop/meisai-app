@@ -16,6 +16,7 @@ const state = {
   source: "all", // 一覧で表示する支払い元 "all" / "rakuten" / "paypay"
   onlyUnconfirmed: false, // true のときは未確認の取引だけを一覧に出す
   detailId: null, // 詳細画面で表示中の取引の id
+  pieCategory: null, // 円グラフで選んでいるジャンル(なければ null)
 };
 
 // 写真を画面に表示するための一時的なURLを覚えておく(取引の id → URL)
@@ -204,25 +205,34 @@ function renderBarChart() {
   });
 }
 
-// この月の内訳(円グラフ):お店ごとの割合を、CSSの conic-gradient で描く
+// この月の内訳(円グラフ):ジャンルごとの割合を、CSSの conic-gradient で描く
+// ジャンルをタップすると、その中でどのお店が何%かを下に表示する
 function renderPieChart() {
   document.getElementById("pie-title").textContent =
-    Number(state.month.slice(5)) + "月の内訳(お店ごと)";
+    Number(state.month.slice(5)) + "月の内訳(ジャンルごと)";
 
   const area = document.getElementById("pie-area");
+  const detail = document.getElementById("pie-detail");
   area.innerHTML = "";
+  detail.innerHTML = "";
 
-  const pie = pieSlices(transactionsOfMonth(state.month));
-  if (pie.slices.length === 0) {
+  const data = totalsByCategory(transactionsOfMonth(state.month));
+  if (data.groups.length === 0) {
     area.innerHTML = '<p class="empty-text">この月の取引はありません。</p>';
     return;
   }
 
-  // 例:conic-gradient(#7f77dd 0% 32%, #1d9e75 32% 52%, ...)
+  // 選んでいたジャンルがこの月にない場合は、選択を外す
+  const selected = data.groups.find(function (g) { return g.name === state.pieCategory; });
+  if (!selected) state.pieCategory = null;
+
+  // 例:conic-gradient(#1d9e75 0% 32%, #7f77dd 32% 52%, ...)
+  // ジャンルを選んでいるときは、ほかのジャンルを薄くして目立たせる
   let start = 0;
-  const parts = pie.slices.map(function (s) {
-    const end = start + (s.amount / pie.total) * 100;
-    const part = s.color + " " + start + "% " + end + "%";
+  const parts = data.groups.map(function (g) {
+    const end = start + (g.amount / data.total) * 100;
+    const color = selected && g !== selected ? g.color + "40" : g.color; // 40 = 透明度25%
+    const part = color + " " + start + "% " + end + "%";
     start = end;
     return part;
   });
@@ -230,25 +240,68 @@ function renderPieChart() {
   circle.className = "pie";
   circle.style.background = "conic-gradient(" + parts.join(", ") + ")";
 
-  // 凡例(色・お店の名前・割合・金額)
+  // 凡例(色・ジャンル名・割合・金額)。タップでそのジャンルの中身を表示
   const legend = document.createElement("ul");
   legend.className = "pie-legend";
-  pie.slices.forEach(function (s) {
+  data.groups.forEach(function (g) {
     const li = document.createElement("li");
+    li.className = "pie-item" + (g === selected ? " is-selected" : "");
     const dot = document.createElement("span");
     dot.className = "source-dot";
-    dot.style.background = s.color;
+    dot.style.background = g.color;
     const name = document.createElement("span");
     name.className = "pie-name";
-    name.textContent = s.name;
+    name.textContent = g.name;
     const value = document.createElement("span");
     value.className = "pie-value";
-    value.textContent = s.percent + "%・" + yen(s.amount);
+    value.textContent = g.percent + "%・" + yen(g.amount);
     li.append(dot, name, value);
+    li.addEventListener("click", function () {
+      // 同じジャンルをもう一度押したら閉じる
+      state.pieCategory = state.pieCategory === g.name ? null : g.name;
+      renderPieChart();
+    });
     legend.appendChild(li);
   });
 
   area.append(circle, legend);
+
+  if (!selected) {
+    const hint = document.createElement("p");
+    hint.className = "hint";
+    hint.textContent = "ジャンルをタップすると、その中のお店の割合が見られます。";
+    detail.appendChild(hint);
+    return;
+  }
+
+  // 選んだジャンルの中のお店(横棒で割合を表示)
+  const title = document.createElement("p");
+  title.className = "pie-detail-title";
+  title.textContent = "「" + selected.name + "」の中のお店(" + yen(selected.amount) + ")";
+  detail.appendChild(title);
+
+  selected.shops.forEach(function (s) {
+    const row = document.createElement("div");
+    row.className = "share-row";
+    const label = document.createElement("div");
+    label.className = "share-label";
+    const n = document.createElement("span");
+    n.className = "pie-name";
+    n.textContent = s.name;
+    const v = document.createElement("span");
+    v.className = "pie-value";
+    v.textContent = s.percentInGroup + "%・" + yen(s.amount);
+    label.append(n, v);
+    const track = document.createElement("div");
+    track.className = "share-track";
+    const fill = document.createElement("div");
+    fill.className = "share-fill";
+    fill.style.width = s.percentInGroup + "%";
+    fill.style.background = selected.color;
+    track.appendChild(fill);
+    row.append(label, track);
+    detail.appendChild(row);
+  });
 }
 
 // 分析コメント(グラフ画面とホーム画面)

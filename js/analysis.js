@@ -69,6 +69,36 @@ function pieSlices(list) {
   return { total: total, slices: slices };
 }
 
+// ジャンル(カテゴリ)ごとの合計(円グラフ用)
+// 辞書にないお店は「辞書にないお店」としてまとめる
+// 戻り値は金額の多い順:[{ name, color, amount, percent, shops: [...] }, ...]
+const NO_CATEGORY = "辞書にないお店";
+
+function totalsByCategory(list) {
+  const map = new Map();
+  totalsByShop(list).forEach(function (shop) {
+    const name = shop.category || NO_CATEGORY;
+    if (!map.has(name)) {
+      const info = CATEGORIES[name] || UNKNOWN_CATEGORY;
+      map.set(name, { name: name, color: info.color, amount: 0, shops: [] });
+    }
+    const group = map.get(name);
+    group.amount += shop.amount;
+    group.shops.push(shop); // ジャンルの中のお店(金額の多い順のまま入る)
+  });
+
+  const groups = Array.from(map.values()).sort(function (a, b) { return b.amount - a.amount; });
+  const total = groups.reduce(function (s, g) { return s + g.amount; }, 0);
+  groups.forEach(function (g) {
+    g.percent = total > 0 ? Math.round((g.amount / total) * 100) : 0;
+    // ジャンルの中で、それぞれのお店が何%か
+    g.shops.forEach(function (s) {
+      s.percentInGroup = Math.round((s.amount / g.amount) * 100);
+    });
+  });
+  return { total: total, groups: groups };
+}
+
 // ---------- 分析コメント ----------
 // その月の取引から、文の型に当てはめたコメントを作る(大事な順)
 function analysisComments(month) {
@@ -79,13 +109,15 @@ function analysisComments(month) {
   const shops = totalsByShop(list);
   const total = shops.reduce(function (s, x) { return s + x.amount; }, 0);
 
-  // 1. 一番多く払ったお店
-  if (shops.length > 0 && total > 0) {
-    const top = shops[0];
-    const percent = Math.round((top.amount / total) * 100);
-    comments.push(
-      "この月は" + top.name + "での支払いが一番多く、全体の" + percent + "%(" + yen(top.amount) + ")です。"
-    );
+  // 1. 一番多く使ったジャンルと、その中で一番多いお店
+  const byCategory = totalsByCategory(list);
+  if (byCategory.groups.length > 0 && byCategory.total > 0) {
+    const top = byCategory.groups[0];
+    let text = "この月は「" + top.name + "」に一番使っていて、全体の" + top.percent + "%(" + yen(top.amount) + ")です。";
+    if (top.shops.length > 1) {
+      text += "そのうち" + top.shops[0].percentInGroup + "%が" + top.shops[0].name + "です。";
+    }
+    comments.push(text);
   }
 
   // 2. 先月より一番増えたお店(1,000円以上増えたときだけ)
