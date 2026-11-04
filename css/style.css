@@ -51,6 +51,13 @@
   }
 }
 
+/* ---------- 文字の大きさ ---------- */
+/* 文字や余白はすべて rem(基準の大きさの何倍か)で書いてあるので、
+   基準(html の文字の大きさ)を変えるだけで、画面全体が大きくなる */
+:root[data-text-size="large"] {
+  font-size: 115%;
+}
+
 /* ---------- 全体 ---------- */
 * {
   box-sizing: border-box;
@@ -668,6 +675,8 @@ main {
 /* 円グラフと凡例 */
 .pie-area {
   display: flex;
+  flex-wrap: wrap; /* 横に収まらないとき(文字が大きいときなど)は、円グラフの下に凡例を回す */
+  justify-content: center;
   gap: 1rem;
   align-items: center;
 }
@@ -684,7 +693,7 @@ main {
   margin: 0;
   padding: 0;
   flex: 1;
-  min-width: 0;
+  min-width: 13rem; /* ジャンル名が「…」で切れない幅を確保する */
   font-size: 0.8125rem;
 }
 

@@ -70,6 +70,39 @@ function applySourceSettings() {
   });
 }
 
+// ---------- 文字の大きさ ----------
+const TEXT_SIZE_KEY = "meisai-text-size";
+
+function loadTextSize() {
+  try {
+    return localStorage.getItem(TEXT_SIZE_KEY) || "normal";
+  } catch (error) {
+    return "normal";
+  }
+}
+
+// "large" のときだけ <html data-text-size="large"> を付ける(CSSで基準の文字を大きくする)
+function applyTextSize(size) {
+  if (size === "large") document.documentElement.setAttribute("data-text-size", "large");
+  else document.documentElement.removeAttribute("data-text-size");
+  document.querySelectorAll("#text-size-switch button").forEach(function (button) {
+    button.classList.toggle("is-selected", button.dataset.size === size);
+  });
+}
+
+document.querySelectorAll("#text-size-switch button").forEach(function (button) {
+  button.addEventListener("click", function () {
+    applyTextSize(button.dataset.size);
+    try {
+      localStorage.setItem(TEXT_SIZE_KEY, button.dataset.size);
+    } catch (error) {
+      console.warn("文字の大きさを保存できませんでした", error);
+    }
+    // 棒グラフなどは大きさに合わせて描き直す
+    render();
+  });
+});
+
 // ---------- 支払い元の設定画面 ----------
 
 function openSourceEditor(source) {

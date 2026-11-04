@@ -1202,6 +1202,7 @@ document.querySelectorAll("#theme-switch button").forEach(function (button) {
 
 async function init() {
   applyTheme(loadTheme());
+  applyTextSize(loadTextSize()); // 文字の大きさ(settings.js)
   applySourceSettings(); // 支払い元の名前と色(settings.js)
   showGuideIfNeeded(); // Safariで開いたときは、ホーム画面に追加する方法を案内する
   requestPersistentStorage();
