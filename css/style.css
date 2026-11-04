@@ -999,6 +999,52 @@ main {
   font-size: 0.875rem;
 }
 
+/* ---------- 海外利用の印 ---------- */
+.overseas-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  vertical-align: 0.1rem;
+}
+
+/* ---------- ジャンルごとの予算 ---------- */
+.pie-value.is-near {
+  color: #ba7517;
+  font-weight: 600;
+}
+
+.pie-value.is-over {
+  color: #e24b4a;
+  font-weight: 600;
+}
+
+.budget-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.budget-input-name {
+  flex: 1;
+  font-size: 0.9375rem;
+}
+
+.budget-input {
+  width: 8rem;
+  text-align: right;
+}
+
+.budget-unit {
+  color: var(--text-sub);
+  font-size: 0.875rem;
+}
+
 /* ---------- 買い物を先に記録(明細待ちの記録) ---------- */
 .home-pending {
   display: flex;

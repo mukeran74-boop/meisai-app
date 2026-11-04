@@ -70,6 +70,91 @@ function applySourceSettings() {
   });
 }
 
+// ---------- ジャンルごとの予算 ----------
+// { "外食": 10000, "通販": 20000 } のように、ジャンルごとの1か月の上限(円)を持つ
+const BUDGET_KEY = "meisai-budgets";
+let budgets = loadBudgets();
+
+function loadBudgets() {
+  try {
+    return JSON.parse(localStorage.getItem(BUDGET_KEY) || "{}");
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveBudgets() {
+  try {
+    localStorage.setItem(BUDGET_KEY, JSON.stringify(budgets));
+    return true;
+  } catch (error) {
+    console.warn("予算を保存できませんでした", error);
+    return false;
+  }
+}
+
+// 予算の設定画面:ジャンルごとに金額の入力欄を並べる
+function openBudgetEditor() {
+  const box = document.getElementById("budget-inputs");
+  box.innerHTML = "";
+  Object.keys(CATEGORIES).forEach(function (name) {
+    const row = document.createElement("label");
+    row.className = "budget-input-row";
+    const label = document.createElement("span");
+    label.className = "budget-input-name";
+    const dot = document.createElement("span");
+    dot.className = "source-dot";
+    dot.style.background = CATEGORIES[name].color;
+    label.append(dot, name);
+    const input = document.createElement("input");
+    input.type = "text";
+    input.inputMode = "numeric";
+    input.className = "text-input budget-input";
+    input.placeholder = "なし";
+    input.dataset.category = name;
+    input.value = budgets[name] ? budgets[name].toLocaleString("ja-JP") : "";
+    const unit = document.createElement("span");
+    unit.className = "budget-unit";
+    unit.textContent = "円";
+    row.append(label, input, unit);
+    box.appendChild(row);
+  });
+  document.getElementById("budget-message").hidden = true;
+  showScreen("screen-budget");
+}
+
+document.getElementById("open-budget").addEventListener("click", openBudgetEditor);
+document.getElementById("budget-back").addEventListener("click", function () {
+  showScreen("screen-settings");
+});
+
+document.getElementById("budget-save").addEventListener("click", function () {
+  const next = {};
+  let hasError = false;
+  document.querySelectorAll(".budget-input").forEach(function (input) {
+    const text = input.value.replace(/[,円\s]/g, "");
+    if (text === "") return; // 空欄は「予算なし」
+    const n = Number(text);
+    if (!Number.isFinite(n) || n < 0) {
+      hasError = true;
+      return;
+    }
+    if (n > 0) next[input.dataset.category] = Math.round(n);
+  });
+  const message = document.getElementById("budget-message");
+  message.hidden = false;
+  if (hasError) {
+    message.textContent = "金額は数字で入力してください。";
+    message.classList.add("is-error");
+    return;
+  }
+  budgets = next;
+  const saved = saveBudgets();
+  render();
+  message.classList.toggle("is-error", !saved);
+  message.textContent = saved ? "予算を保存しました。グラフ画面で使った金額と比べられます。" : "保存できませんでした。";
+});
+
 // ---------- 文字の大きさ ----------
 const TEXT_SIZE_KEY = "meisai-text-size";
 

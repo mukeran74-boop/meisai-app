@@ -143,7 +143,7 @@ function showScreen(screenId) {
   // 詳細画面は「取引」タブ、お店の辞書は「設定」タブの中の画面として扱う
   let activeTab = screenId;
   if (screenId === "screen-detail") activeTab = "screen-list";
-  if (["screen-shops", "screen-source", "screen-about"].indexOf(screenId) !== -1) {
+  if (["screen-shops", "screen-source", "screen-about", "screen-budget"].indexOf(screenId) !== -1) {
     activeTab = "screen-settings";
   }
   if (screenId === "screen-pending" || screenId === "screen-pending-edit") activeTab = "screen-home";
@@ -174,8 +174,61 @@ function render() {
 function renderGraph() {
   renderBarChart();
   renderPieChart();
+  renderBudgets();
   renderComments();
   renderSubscriptions();
+}
+
+// 予算と使った金額(予算を決めたジャンルだけ、横棒で表示)
+function renderBudgets() {
+  const area = document.getElementById("budget-area");
+  area.innerHTML = "";
+  const list = budgetStatus(state.month);
+
+  const title = document.createElement("h2");
+  title.className = "graph-title";
+  title.textContent = Number(state.month.slice(5)) + "月の予算";
+  area.appendChild(title);
+
+  if (list.length === 0) {
+    const p = document.createElement("p");
+    p.className = "hint";
+    p.style.textAlign = "left";
+    p.textContent = "ジャンルごとに1か月の予算を決めると、ここで使った金額と比べられます。";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "secondary-button small-button";
+    button.textContent = "予算を設定する";
+    button.addEventListener("click", openBudgetEditor);
+    area.append(p, button);
+    return;
+  }
+
+  list.forEach(function (b) {
+    const row = document.createElement("div");
+    row.className = "share-row";
+    const label = document.createElement("div");
+    label.className = "share-label";
+    const n = document.createElement("span");
+    n.className = "pie-name";
+    n.textContent = b.name;
+    const v = document.createElement("span");
+    v.className = "pie-value";
+    // 超えたら赤、80%以上ならオレンジ
+    if (b.ratio > 1) v.classList.add("is-over");
+    else if (b.ratio >= 0.8) v.classList.add("is-near");
+    v.textContent = yen(b.used) + " / " + yen(b.budget) + "(" + Math.round(b.ratio * 100) + "%)";
+    label.append(n, v);
+    const track = document.createElement("div");
+    track.className = "share-track";
+    const fill = document.createElement("div");
+    fill.className = "share-fill";
+    fill.style.width = Math.min(100, b.ratio * 100) + "%";
+    fill.style.background = b.ratio > 1 ? "#e24b4a" : b.ratio >= 0.8 ? "#ba7517" : b.color;
+    track.appendChild(fill);
+    row.append(label, track);
+    area.appendChild(row);
+  });
 }
 
 // 毎月の支払い(サブスクの自動検出の結果。analysis.js の detectSubscriptions)
@@ -548,6 +601,7 @@ function searchTransactions(query) {
         shop ? shop.category : "",
         SOURCE_NAMES[t.source],
         month,
+        overseasCountry(t) ? "海外 " + countryLabel(overseasCountry(t)) : "",
         String(Math.abs(t.amount)), // 3280
         Math.abs(t.amount).toLocaleString("ja-JP"), // 3,280
       ].join(" ")
@@ -635,6 +689,14 @@ function createTransactionRow(t, withYear) {
     mark.className = "unconfirmed";
     mark.textContent = "・未確認";
     sub.appendChild(mark);
+  }
+  // 海外で使った取引には「海外」の印を付ける(見覚えのない海外利用は不正利用のよくある例)
+  const country = overseasCountry(t);
+  if (country) {
+    const tag = document.createElement("span");
+    tag.className = "overseas-tag";
+    tag.textContent = "海外 " + country;
+    name.appendChild(tag);
   }
   body.append(name, sub);
 
@@ -928,6 +990,8 @@ async function renderDetail() {
     ["日時", parts[0] + "年" + parts[1] + "月" + parts[2] + "日" + (t.time ? " " + t.time : "")],
     ["支払い元", SOURCE_NAMES[t.source]],
     ["支払い方法", t.method || "-"],
+    // 海外で使ったときは利用国も出す
+    ["利用した国", overseasCountry(t) ? countryLabel(overseasCountry(t)) + "・海外での利用" : "日本"],
     // お店の辞書に当てはまったときは、カテゴリと説明も出す
     ["カテゴリ", shop ? shop.category : "辞書に登録なし"],
   ];

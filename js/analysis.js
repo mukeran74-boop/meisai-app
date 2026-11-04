@@ -99,6 +99,45 @@ function totalsByCategory(list) {
   return { total: total, groups: groups };
 }
 
+// ---------- 海外利用 ----------
+// 楽天カードは店名の後ろの「利用国US」、PayPayは「利用国」の列から、海外での利用を見分ける。
+// 見覚えのない海外での利用は、不正利用でよくある例なので目立たせる。
+
+const COUNTRY_NAMES = {
+  US: "アメリカ", GB: "イギリス", IE: "アイルランド", NL: "オランダ", DE: "ドイツ", FR: "フランス",
+  SG: "シンガポール", HK: "香港", CN: "中国", KR: "韓国", TW: "台湾", TH: "タイ", AU: "オーストラリア",
+  CA: "カナダ", LU: "ルクセンブルク", SE: "スウェーデン",
+};
+
+// 海外で使った取引なら国のコード("US" など)、そうでなければ null
+function overseasCountry(t) {
+  if (t.country) return t.country;
+  const m = (t.rawName || "").normalize("NFKC").match(/利用国\s*([A-Z]{2})/);
+  return m ? m[1] : null;
+}
+
+// "US" → "アメリカ(US)"
+function countryLabel(code) {
+  return COUNTRY_NAMES[code] ? COUNTRY_NAMES[code] + "(" + code + ")" : code;
+}
+
+// ---------- ジャンルごとの予算 ----------
+// その月の、ジャンルごとの使った金額と予算を比べる(予算を決めたジャンルだけ)
+// 戻り値:[{ name, color, budget, used, ratio }, ...](使った割合の大きい順)
+function budgetStatus(month) {
+  const used = {};
+  totalsByCategory(transactionsOfMonth(month)).groups.forEach(function (g) {
+    used[g.name] = g.amount;
+  });
+  return Object.keys(budgets)
+    .filter(function (name) { return budgets[name] > 0 && CATEGORIES[name]; })
+    .map(function (name) {
+      const u = used[name] || 0;
+      return { name: name, color: CATEGORIES[name].color, budget: budgets[name], used: u, ratio: u / budgets[name] };
+    })
+    .sort(function (a, b) { return b.ratio - a.ratio; });
+}
+
 // ---------- サブスクの自動検出 ----------
 // 「同じお店で、ほぼ同じ金額が、毎月同じころに」支払われている取引を探す。
 // お店の辞書でサブスクにしていなくても見つけられるので、
@@ -206,6 +245,23 @@ function analysisComments(month) {
       text += "そのうち" + top.shops[0].percentInGroup + "%が" + top.shops[0].name + "です。";
     }
     comments.push(text);
+  }
+
+  // 1-2. 予算を超えた・超えそうなジャンル(80%以上)
+  budgetStatus(month).forEach(function (b) {
+    if (b.ratio > 1) {
+      comments.push("「" + b.name + "」が予算を" + yen(b.used - b.budget) + "超えています(" + yen(b.used) + " / 予算 " + yen(b.budget) + ")。");
+    } else if (b.ratio >= 0.8) {
+      comments.push("「" + b.name + "」が予算の" + Math.round(b.ratio * 100) + "%に達しています(" + yen(b.used) + " / 予算 " + yen(b.budget) + ")。");
+    }
+  });
+
+  // 1-3. 海外での利用(未確認のもの)
+  const overseas = list.filter(function (t) { return overseasCountry(t) && t.status === "unconfirmed"; });
+  if (overseas.length > 0) {
+    comments.push(
+      "海外での利用が" + overseas.length + "件(" + yen(sum(overseas)) + ")あり、まだ確認していません。見覚えがあるか確認しましょう。"
+    );
   }
 
   // 2. 先月より一番増えたお店(1,000円以上増えたときだけ)

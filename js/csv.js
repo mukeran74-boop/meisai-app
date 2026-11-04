@@ -159,6 +159,7 @@ function normalizePayPay(rows) {
   const iTo = col("取引先");
   const iMethod = col("取引方法");
   const iNo = col("取引番号");
+  const iCountry = col("利用国"); // 海外で使ったときだけ国が入る(それ以外は "-")
 
   const items = [];
   let skipped = 0;
@@ -208,6 +209,7 @@ function normalizePayPay(rows) {
       method: method,
       txNo: txNo,
       dupKey: "paypay|" + txNo, // PayPayは取引番号で区別できる
+      country: iCountry !== -1 && (r[iCountry] || "-").trim() !== "-" ? (r[iCountry] || "").trim() : null,
     });
   });
 

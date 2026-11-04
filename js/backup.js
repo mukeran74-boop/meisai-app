@@ -60,7 +60,7 @@ async function exportBackup() {
       images: imageData,
       customShops: customShops,
       pending: pendingItems, // 先に記録した買い物
-      settings: { sources: sourceSettings, theme: loadTheme() },
+      settings: { sources: sourceSettings, theme: loadTheme(), budgets: budgets },
     };
 
     const text = JSON.stringify(backup);
@@ -160,6 +160,10 @@ async function importBackup(file) {
         sourceSettings = Object.assign(sourceSettings, backup.settings.sources);
         saveSourceSettings();
         applySourceSettings();
+      }
+      if (backup.settings.budgets) {
+        budgets = backup.settings.budgets;
+        saveBudgets();
       }
       if (backup.settings.theme) {
         applyTheme(backup.settings.theme);
