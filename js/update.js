@@ -7,12 +7,26 @@
 // 新しい版が出ていれば自動で読み込み直す。
 //
 // ★ファイルを更新したら、次の3か所の番号をそろえて上げる
-//   1. この APP_VERSION
-//   2. version.json の version
-//   3. index.html の ?v=
+//   1. index.html の <meta name="app-version">
+//   2. index.html の ?v=
+//   3. version.json の version
+//
+// 【直した不具合】
+// 前は、このファイルの中に書いた番号と version.json を比べていた。
+// ところが、iPhoneが古い index.html を覚えていても、このファイルだけは
+// 新しいものが読み込まれることがあり、その場合「最新」と勘違いして
+// 古い画面のままになっていた。
+// そこで、画面(index.html)自体に書いてある番号と比べるようにした。
 // =========================================================
 
-const APP_VERSION = "2026110403";
+// 今表示している画面(index.html)の版。古い画面には書いていないので null になる
+const PAGE_VERSION = (function () {
+  const meta = document.querySelector('meta[name="app-version"]');
+  return meta ? meta.content : null;
+})();
+
+// アプリの版(設定画面の表示や、辞書ファイルを読むときに使う)
+const APP_VERSION = PAGE_VERSION || "unknown";
 
 async function checkForUpdate() {
   try {
@@ -20,7 +34,7 @@ async function checkForUpdate() {
     const response = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
     if (!response.ok) return;
     const latest = (await response.json()).version;
-    if (!latest || latest === APP_VERSION) return; // 最新なら何もしない
+    if (!latest || latest === PAGE_VERSION) return; // 画面が最新なら何もしない
 
     // メモを入力している途中なら、書いた内容が消えないよう読み込み直さない
     const active = document.activeElement;
