@@ -930,6 +930,30 @@ main {
   vertical-align: 0.1rem;
 }
 
+/* 毎月の支払い(サブスクの自動検出) */
+.sub-total {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0.25rem 0;
+}
+
+.sub-item {
+  cursor: default;
+  align-items: flex-start;
+}
+
+.custom-tag.is-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.small-button {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.6rem;
+  margin-top: 0.35rem;
+  color: var(--accent);
+}
+
 /* ジャンルの選択肢 */
 .category-picker {
   display: flex;

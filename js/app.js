@@ -133,6 +133,7 @@ function showScreen(screenId) {
   if (screenId === "screen-shop-edit") {
     // 詳細画面から来たときは「取引」、辞書の一覧から来たときは「設定」のタブ
     activeTab = shopEditReturn === "screen-detail" ? "screen-list" : "screen-settings";
+    if (shopEditReturn === "screen-graph") activeTab = "screen-graph";
   }
   tabs.forEach(function (tab) {
     tab.classList.toggle("is-active", tab.dataset.target === activeTab);
@@ -156,6 +157,84 @@ function renderGraph() {
   renderBarChart();
   renderPieChart();
   renderComments();
+  renderSubscriptions();
+}
+
+// 毎月の支払い(サブスクの自動検出の結果。analysis.js の detectSubscriptions)
+function renderSubscriptions() {
+  const subs = detectSubscriptions();
+  const ul = document.getElementById("sub-list");
+  ul.innerHTML = "";
+
+  // 続いているものの合計(1か月分と、1年に直した金額)
+  const monthly = subs
+    .filter(function (s) { return s.active; })
+    .reduce(function (total, s) { return total + s.amount; }, 0);
+  document.getElementById("sub-total").textContent =
+    subs.length === 0 ? "" : "続いている支払いの合計:毎月 " + yen(monthly) + "(1年で約 " + yen(monthly * 12) + ")";
+
+  if (subs.length === 0) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.innerHTML = '<p class="empty-text">毎月の支払いは見つかりませんでした。</p>';
+    ul.appendChild(li);
+    return;
+  }
+
+  subs.forEach(function (s) {
+    const li = document.createElement("li");
+    li.className = "tx sub-item";
+
+    const icon = document.createElement("div");
+    icon.className = "tx-icon";
+    icon.style.background = categoryOf(s.sample).color;
+    icon.appendChild(createCategoryIcon(s.sample));
+
+    const body = document.createElement("div");
+    body.className = "tx-body";
+    const name = document.createElement("div");
+    name.className = "tx-name";
+    name.textContent = s.name;
+    const tag = document.createElement("span");
+    tag.className = "custom-tag" + (s.registered ? "" : " is-warning");
+    tag.textContent = s.registered ? "サブスク" : "サブスクかも";
+    name.appendChild(tag);
+
+    const sub = document.createElement("div");
+    sub.className = "tx-sub";
+    if (s.active) {
+      // 次に払う日の目安(最後に払った日の1か月後)
+      const next = addMonth(s.lastDate.slice(0, 7), 1);
+      sub.textContent =
+        "毎月" + s.day + "日ごろ・" + s.months + "か月続いている・次は" + Number(next.slice(5)) + "月" + s.day + "日ごろ";
+    } else {
+      sub.textContent = "最近は支払いなし(最後は" + Number(s.lastDate.slice(5, 7)) + "/" + Number(s.lastDate.slice(8, 10)) + ")";
+    }
+    body.append(name, sub);
+
+    // 辞書でサブスクにしていないものは、その場で登録できるようにする
+    if (!s.registered) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "secondary-button small-button";
+      button.textContent = "サブスクとして辞書に登録";
+      button.addEventListener("click", function () {
+        const options = { category: "サブスク", returnTo: "screen-graph" };
+        if (s.shop && s.shop.custom) options.shop = s.shop;
+        else if (s.shop) options.base = s.shop;
+        else options.pattern = s.sample.name;
+        openShopEditor(options);
+      });
+      body.appendChild(button);
+    }
+
+    const amount = document.createElement("div");
+    amount.className = "tx-amount";
+    amount.textContent = yen(s.amount) + "/月";
+
+    li.append(icon, body, amount);
+    ul.appendChild(li);
+  });
 }
 
 // 月ごとの利用額(棒グラフ):表示中の月までの6か月分

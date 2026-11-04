@@ -40,6 +40,8 @@ function openShopEditor(options) {
   document.getElementById("shop-edit-name").value = source ? source.name : "";
   document.getElementById("shop-edit-desc").value = source ? source.description || "" : "";
   shopEditCategory = source && CATEGORIES[source.category] ? source.category : "その他";
+  // サブスクの自動検出から開いたときなど、ジャンルを最初から決めておく
+  if (options.category && CATEGORIES[options.category]) shopEditCategory = options.category;
 
   document.getElementById("shop-edit-message").hidden = true;
   document.getElementById("shop-edit-delete").hidden = !options.shop;
@@ -89,6 +91,8 @@ function showShopEditMessage(text, isError) {
 function closeShopEditor() {
   if (shopEditReturn === "screen-detail") {
     renderDetail();
+  } else if (shopEditReturn === "screen-graph") {
+    renderGraph();
   } else {
     renderShopList();
   }

@@ -99,6 +99,94 @@ function totalsByCategory(list) {
   return { total: total, groups: groups };
 }
 
+// ---------- サブスクの自動検出 ----------
+// 「同じお店で、ほぼ同じ金額が、毎月同じころに」支払われている取引を探す。
+// お店の辞書でサブスクにしていなくても見つけられるので、
+// 登録し忘れや、使っていないのに払い続けているサブスク(解約し忘れ)に気づける。
+//
+// 判定のルール
+//  ・3か月以上続けて、毎月支払いがある
+//  ・金額が毎月ほぼ同じ(真ん中の金額から±10%以内)
+//  ・支払う日がほぼ同じ(いちばん早い日といちばん遅い日の差が6日以内)
+const SUB_MIN_MONTHS = 3;
+const SUB_AMOUNT_RANGE = 0.1;
+const SUB_DAY_RANGE = 6;
+
+function median(numbers) {
+  const sorted = numbers.slice().sort(function (a, b) { return a - b; });
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+function detectSubscriptions() {
+  // お店ごとにまとめる(辞書で同じお店のものは1つに)
+  const groups = new Map();
+  state.transactions.forEach(function (t) {
+    if (t.amount <= 0) return; // 返品・返金は対象外
+    const shop = findShop(t);
+    const key = shop ? shop.id : "raw:" + t.name;
+    if (!groups.has(key)) groups.set(key, { key: key, shop: shop, sample: t, items: [] });
+    groups.get(key).items.push(t);
+  });
+
+  // データがある一番新しい月(これより前に止まっているものは「最近は支払いなし」)
+  const latest = latestMonth();
+  const results = [];
+
+  groups.forEach(function (g) {
+    // 月ごとに1件ずつ(同じ月に何回も払っているお店は、サブスクではないとみなす)
+    const byMonth = new Map();
+    g.items.forEach(function (t) {
+      const m = t.date.slice(0, 7);
+      if (!byMonth.has(m)) byMonth.set(m, []);
+      byMonth.get(m).push(t);
+    });
+    const months = Array.from(byMonth.keys()).sort();
+    if (months.some(function (m) { return byMonth.get(m).length > 1; })) return;
+
+    // 続いている月の一番長いかたまりを探す(例:5月〜10月)
+    let best = [];
+    let run = [];
+    months.forEach(function (m) {
+      if (run.length > 0 && addMonth(run[run.length - 1], 1) !== m) run = [];
+      run.push(m);
+      if (run.length > best.length) best = run.slice();
+    });
+    if (best.length < SUB_MIN_MONTHS) return;
+
+    const payments = best.map(function (m) { return byMonth.get(m)[0]; });
+    const amounts = payments.map(function (t) { return t.amount; });
+    const typical = median(amounts);
+    const sameAmount = amounts.every(function (a) {
+      return Math.abs(a - typical) <= typical * SUB_AMOUNT_RANGE;
+    });
+    const days = payments.map(function (t) { return Number(t.date.slice(8, 10)); });
+    const sameDay = Math.max.apply(null, days) - Math.min.apply(null, days) <= SUB_DAY_RANGE;
+    if (!sameAmount || !sameDay) return;
+
+    const last = payments[payments.length - 1];
+    const lastMonth = last.date.slice(0, 7);
+    results.push({
+      key: g.key,
+      shop: g.shop,
+      sample: g.sample,
+      name: g.shop ? g.shop.name : g.sample.name,
+      category: g.shop ? g.shop.category : null,
+      amount: Math.round(typical),
+      months: best.length,
+      firstMonth: best[0],
+      lastDate: last.date,
+      day: Math.round(median(days)),
+      // 一番新しい月か、その前の月まで払っていれば「続いている」
+      active: lastMonth === latest || addMonth(lastMonth, 1) === latest,
+      registered: g.shop && g.shop.category === "サブスク",
+    });
+  });
+
+  // 金額の大きい順
+  return results.sort(function (a, b) { return b.amount - a.amount; });
+}
+
 // ---------- 分析コメント ----------
 // その月の取引から、文の型に当てはめたコメントを作る(大事な順)
 function analysisComments(month) {
@@ -140,6 +228,15 @@ function analysisComments(month) {
     .reduce(function (sum, s) { return sum + s.amount; }, 0);
   if (subscription > 0) {
     comments.push("サブスクだけで" + yen(subscription) + "使っています。");
+  }
+
+  // 3-2. 辞書でサブスクにしていない、毎月の支払い
+  const notRegistered = detectSubscriptions().filter(function (s) { return s.active && !s.registered; });
+  if (notRegistered.length > 0) {
+    comments.push(
+      "サブスクのような毎月の支払いが" + notRegistered.length + "件見つかりました(" +
+        notRegistered.map(function (s) { return s.name; }).join("、") + ")。下の「毎月の支払い」で確認できます。"
+    );
   }
 
   // 4. 辞書にないお店(見覚えのない支払いかもしれない)
