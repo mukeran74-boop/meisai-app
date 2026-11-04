@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>明細メモ</title>
-  <link rel="stylesheet" href="css/style.css?v=2026103011">
+  <link rel="stylesheet" href="css/style.css?v=2026110401">
 </head>
 <body>
   <main>
@@ -49,6 +49,12 @@
         <button type="button" class="month-prev" aria-label="前の月">‹</button>
         <span class="month-label"></span>
         <button type="button" class="month-next" aria-label="次の月">›</button>
+      </div>
+
+      <!-- 検索(入力すると、月に関係なく全期間から探す) -->
+      <div class="search-box">
+        <input type="search" class="text-input" id="search-input" placeholder="店名・メモ・金額で検索" autocomplete="off">
+        <button type="button" class="search-clear" id="search-clear" aria-label="検索をやめる" hidden>×</button>
       </div>
 
       <!-- 支払い元の切り替え -->
@@ -298,15 +304,15 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/update.js?v=2026103011"></script>
-  <script src="js/db.js?v=2026103011"></script>
-  <script src="js/csv.js?v=2026103011"></script>
-  <script src="js/image.js?v=2026103011"></script>
-  <script src="js/shops.js?v=2026103011"></script>
-  <script src="js/analysis.js?v=2026103011"></script>
-  <script src="js/viewer.js?v=2026103011"></script>
-  <script src="js/settings.js?v=2026103011"></script>
-  <script src="js/shopedit.js?v=2026103011"></script>
-  <script src="js/app.js?v=2026103011"></script>
+  <script src="js/update.js?v=2026110401"></script>
+  <script src="js/db.js?v=2026110401"></script>
+  <script src="js/csv.js?v=2026110401"></script>
+  <script src="js/image.js?v=2026110401"></script>
+  <script src="js/shops.js?v=2026110401"></script>
+  <script src="js/analysis.js?v=2026110401"></script>
+  <script src="js/viewer.js?v=2026110401"></script>
+  <script src="js/settings.js?v=2026110401"></script>
+  <script src="js/shopedit.js?v=2026110401"></script>
+  <script src="js/app.js?v=2026110401"></script>
 </body>
 </html>

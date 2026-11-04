@@ -349,6 +349,45 @@ main {
   cursor: pointer;
 }
 
+/* ---------- 検索 ---------- */
+.search-box {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.search-box .text-input {
+  padding-right: 2.5rem; /* 右の「×」と文字が重ならないように */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* iPhoneやChromeが自動で付ける「×」は隠し、自分の「×」だけを出す */
+.search-box input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.search-clear {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text-sub);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* 検索中は全期間から探すので、月の切り替えを薄くする */
+#screen-list.is-searching .month-nav {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 /* ---------- 一覧の上の行(件数と「未確認だけ表示」) ---------- */
 .list-toolbar {
   display: flex;

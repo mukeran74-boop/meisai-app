@@ -17,6 +17,7 @@ const state = {
   onlyUnconfirmed: false, // true のときは未確認の取引だけを一覧に出す
   detailId: null, // 詳細画面で表示中の取引の id
   pieCategory: null, // 円グラフで選んでいるジャンル(なければ null)
+  query: "", // 取引一覧の検索の言葉(空なら検索していない)
 };
 
 // 写真を画面に表示するための一時的なURLを覚えておく(取引の id → URL)
@@ -383,7 +384,10 @@ function renderHome() {
 
 // 取引一覧
 function renderList() {
-  let list = transactionsOfMonth(state.month);
+  // 検索しているときは、月に関係なく全期間から探す
+  const searching = state.query !== "";
+  document.getElementById("screen-list").classList.toggle("is-searching", searching);
+  let list = searching ? searchTransactions(state.query) : transactionsOfMonth(state.month);
   if (state.source !== "all") {
     list = list.filter(function (t) { return t.source === state.source; });
   }
@@ -400,7 +404,7 @@ function renderList() {
   });
 
   document.getElementById("list-total").textContent =
-    list.length + "件・合計 " + yen(sum(list));
+    (searching ? "全期間から " : "") + list.length + "件・合計 " + yen(sum(list));
 
   const ul = document.getElementById("tx-list");
   ul.innerHTML = "";
@@ -408,20 +412,75 @@ function renderList() {
   if (list.length === 0) {
     const li = document.createElement("li");
     li.className = "empty";
-    li.innerHTML = state.onlyUnconfirmed
-      ? '<p class="empty-text">この月の未確認の取引はありません。</p>'
-      : '<p class="empty-text">この月の取引はありません。</p>';
+    let text = "この月の取引はありません。";
+    if (state.onlyUnconfirmed) text = "この月の未確認の取引はありません。";
+    if (searching) text = "「" + state.query + "」に当てはまる取引はありません。";
+    const p = document.createElement("p");
+    p.className = "empty-text";
+    p.textContent = text;
+    li.appendChild(p);
     ul.appendChild(li);
     return;
   }
 
   list.forEach(function (t) {
-    ul.appendChild(createTransactionRow(t));
+    ul.appendChild(createTransactionRow(t, searching));
   });
 }
 
+// ---------- 検索 ----------
+// 店名(辞書の名前・明細の表記)、メモ、ジャンル、金額で、全期間の取引から探す
+// 「スーパー 10月」のように空白で区切ると、すべての言葉を含む取引だけに絞る
+
+// 比べやすい形にそろえる(全角・半角、大文字・小文字の違いをなくす)
+function normalizeText(text) {
+  return (text || "").normalize("NFKC").toLowerCase();
+}
+
+function searchTransactions(query) {
+  const words = normalizeText(query).split(/\s+/).filter(function (w) { return w !== ""; });
+  return state.transactions.filter(function (t) {
+    const shop = findShop(t);
+    // 探す対象の文字をまとめておく
+    const month = Number(t.date.slice(5, 7)) + "月";
+    const target = normalizeText(
+      [
+        displayName(t),
+        t.rawName,
+        t.memo,
+        shop ? shop.category : "",
+        SOURCE_NAMES[t.source],
+        month,
+        String(Math.abs(t.amount)), // 3280
+        Math.abs(t.amount).toLocaleString("ja-JP"), // 3,280
+      ].join(" ")
+    );
+    return words.every(function (w) {
+      // 金額はカンマや「円」を付けて入力しても探せるようにする
+      const word = w.replace(/円$/, "");
+      return target.indexOf(word) !== -1;
+    });
+  });
+}
+
+const searchInput = document.getElementById("search-input");
+
+searchInput.addEventListener("input", function () {
+  state.query = searchInput.value.trim();
+  document.getElementById("search-clear").hidden = state.query === "";
+  renderList();
+});
+
+document.getElementById("search-clear").addEventListener("click", function () {
+  searchInput.value = "";
+  state.query = "";
+  document.getElementById("search-clear").hidden = true;
+  renderList();
+});
+
 // 取引1件分の行を作る
-function createTransactionRow(t) {
+// withYear:検索結果のように月をまたいで並べるとき、今年以外は年も付ける
+function createTransactionRow(t, withYear) {
   const li = document.createElement("li");
   li.className = "tx";
 
@@ -459,7 +518,10 @@ function createTransactionRow(t) {
   const dot = document.createElement("span");
   dot.className = "source-dot";
   dot.style.background = "var(--" + t.source + ")";
-  const md = Number(t.date.slice(5, 7)) + "/" + Number(t.date.slice(8, 10));
+  let md = Number(t.date.slice(5, 7)) + "/" + Number(t.date.slice(8, 10));
+  if (withYear && Number(t.date.slice(0, 4)) !== new Date().getFullYear()) {
+    md = t.date.slice(0, 4) + "/" + md;
+  }
   // メモがあればメモ、なければ支払い元を表示する
   sub.append(dot, md + (t.time ? " " + t.time : "") + "・" + (t.memo || SOURCE_NAMES[t.source]));
   if (t.status === "unconfirmed") {
