@@ -1030,12 +1030,18 @@ main {
   margin-bottom: 0.5rem;
 }
 
+/* ジャンル名は横書きのまま1行で表示する(折り返さない) */
 .budget-input-name {
   flex: 1;
+  min-width: 0;
   font-size: 0.9375rem;
+  white-space: nowrap;
 }
 
-.budget-input {
+/* 入力欄は決まった幅にする
+   (.text-input の「横幅いっぱい」より優先させるため、行の中の指定にしている) */
+.budget-input-row .budget-input {
+  flex: 0 0 8rem;
   width: 8rem;
   text-align: right;
 }
