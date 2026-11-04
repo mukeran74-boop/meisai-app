@@ -1145,6 +1145,46 @@ document.getElementById("shops-back").addEventListener("click", function () {
   showScreen("screen-settings");
 });
 
+// ---------- デモデータを読み込む(発表・お試し用) ----------
+// demo フォルダの架空の明細CSVを取ってきて、ふつうの読み込みと同じ処理で読み込む
+
+const DEMO_FILES = [
+  "paypay_2026-05_2026-10.csv",
+  "rakuten_2026-06.csv",
+  "rakuten_2026-07.csv",
+  "rakuten_2026-08.csv",
+  "rakuten_2026-09.csv",
+  "rakuten_2026-10.csv",
+  "rakuten_2026-11.csv",
+];
+
+document.getElementById("demo-load").addEventListener("click", async function () {
+  const ok = window.confirm(
+    "架空のデモ用の明細を読み込みます。すでに読み込んである取引は重複しません。よろしいですか?"
+  );
+  if (!ok) return;
+
+  const messages = [];
+  let hasError = false;
+  for (const name of DEMO_FILES) {
+    try {
+      const response = await fetch("demo/" + name + "?v=" + APP_VERSION, { cache: "no-store" });
+      if (!response.ok) throw new Error("ファイルを取得できませんでした");
+      const file = new File([await response.text()], name, { type: "text/csv" });
+      messages.push(await importFile(file));
+    } catch (error) {
+      console.error(error);
+      hasError = true;
+      messages.push(name + ":" + error.message);
+    }
+  }
+
+  state.month = latestMonth();
+  render();
+  showImportResult("デモデータ\n" + messages.join("\n"), hasError);
+  showScreen("screen-home");
+});
+
 // ---------- すべてのデータを削除 ----------
 
 document.getElementById("clear-button").addEventListener("click", async function () {

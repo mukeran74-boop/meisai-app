@@ -9,9 +9,12 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <!-- この画面(index.html)の版。update.js が、最新の版と比べるのに使う -->
-  <meta name="app-version" content="2026110407">
+  <meta name="app-version" content="2026110408">
   <title>明細メモ</title>
-  <link rel="stylesheet" href="css/style.css?v=2026110407">
+  <!-- ホーム画面に追加したときのアイコン(iPhone)と、ブラウザのタブのアイコン -->
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css?v=2026110408">
 </head>
 <body>
   <main>
@@ -218,6 +221,13 @@
       <p class="note">機種変更のときや、パソコンとiPhoneの間でデータを移すときに使います。書き出したファイルには明細の内容が入っているので、人に渡さないでください。</p>
       <p class="detail-message" id="backup-message" hidden></p>
       <button type="button" class="danger-button" id="clear-button" style="margin-top: 0.75rem">すべてのデータを削除</button>
+
+      <p class="section-label">発表・お試し用</p>
+      <button type="button" class="settings-item" id="demo-load" style="border: 1px solid var(--border); border-radius: 8px">
+        <span>デモデータを読み込む</span>
+        <span class="settings-sub">›</span>
+      </button>
+      <p class="note">架空のお店・金額のデモ用の明細(楽天カード形式・PayPay形式の6か月分)を、ボタン1つで読み込みます。本物の明細は使いません。</p>
     </section>
 
     <!-- ===== 支払い元の設定(設定から開く) ===== -->
@@ -387,17 +397,17 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/update.js?v=2026110407"></script>
-  <script src="js/db.js?v=2026110407"></script>
-  <script src="js/csv.js?v=2026110407"></script>
-  <script src="js/image.js?v=2026110407"></script>
-  <script src="js/shops.js?v=2026110407"></script>
-  <script src="js/analysis.js?v=2026110407"></script>
-  <script src="js/viewer.js?v=2026110407"></script>
-  <script src="js/settings.js?v=2026110407"></script>
-  <script src="js/shopedit.js?v=2026110407"></script>
-  <script src="js/backup.js?v=2026110407"></script>
-  <script src="js/pending.js?v=2026110407"></script>
-  <script src="js/app.js?v=2026110407"></script>
+  <script src="js/update.js?v=2026110408"></script>
+  <script src="js/db.js?v=2026110408"></script>
+  <script src="js/csv.js?v=2026110408"></script>
+  <script src="js/image.js?v=2026110408"></script>
+  <script src="js/shops.js?v=2026110408"></script>
+  <script src="js/analysis.js?v=2026110408"></script>
+  <script src="js/viewer.js?v=2026110408"></script>
+  <script src="js/settings.js?v=2026110408"></script>
+  <script src="js/shopedit.js?v=2026110408"></script>
+  <script src="js/backup.js?v=2026110408"></script>
+  <script src="js/pending.js?v=2026110408"></script>
+  <script src="js/app.js?v=2026110408"></script>
 </body>
 </html>
