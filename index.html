@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <!-- この画面(index.html)の版。update.js が、最新の版と比べるのに使う -->
-  <meta name="app-version" content="2026110406">
+  <meta name="app-version" content="2026110407">
   <title>明細メモ</title>
-  <link rel="stylesheet" href="css/style.css?v=2026110406">
+  <link rel="stylesheet" href="css/style.css?v=2026110407">
 </head>
 <body>
   <main>
@@ -42,6 +42,13 @@
       <!-- 明細を読み込むボタン。本物のファイル選択欄は隠し、ボタンから呼び出す -->
       <button type="button" class="primary-button" id="import-button">明細を読み込む</button>
       <input type="file" id="import-input" accept=".csv,text/csv" multiple hidden>
+
+      <!-- 明細が届く前に、買ったその場で先に記録する -->
+      <button type="button" class="secondary-button wide-button" id="home-pending-add" style="margin-top: 0.75rem">+ 買い物を先に記録(明細が届く前に)</button>
+      <button type="button" class="home-pending" id="home-pending" hidden>
+        <span id="home-pending-text"></span>
+        <span class="settings-sub">›</span>
+      </button>
       <p class="hint">楽天カード・PayPayのCSVに対応しています。複数のファイルをまとめて選べます。</p>
     </section>
 
@@ -262,6 +269,55 @@
       <ul class="tx-list" id="shop-list"></ul>
     </section>
 
+    <!-- ===== 明細待ちの記録(先に記録した買い物の一覧) ===== -->
+    <section id="screen-pending" class="screen">
+      <button type="button" class="back-button" id="pending-back">‹ ホーム</button>
+      <header class="screen-header">
+        <h1>明細待ちの記録</h1>
+      </header>
+      <p class="hint" style="text-align:left">買ったその場で記録しておくと、明細を読み込んだときに、金額・支払い元・日付が近い取引を候補として出します。候補を選ぶと、写真とメモがその取引に移ります。</p>
+      <button type="button" class="primary-button" id="pending-add">+ 買い物を先に記録</button>
+      <ul class="pending-list" id="pending-list"></ul>
+    </section>
+
+    <!-- ===== 買い物を先に記録(記録・編集) ===== -->
+    <section id="screen-pending-edit" class="screen">
+      <button type="button" class="back-button" id="pending-edit-back">‹ 戻る</button>
+      <header class="screen-header">
+        <h1 id="pending-edit-title">買い物を先に記録</h1>
+      </header>
+
+      <p class="section-label">日付</p>
+      <input type="date" class="text-input" id="pending-date">
+
+      <p class="section-label">金額(円)</p>
+      <input type="text" class="text-input" id="pending-amount" inputmode="numeric" placeholder="3280">
+      <p class="note">明細と同じ金額の取引を探すので、レシートの合計金額を入れてください。</p>
+
+      <p class="section-label">支払い元</p>
+      <div class="segmented" id="pending-source">
+        <button type="button" data-source="rakuten"><span class="source-name" data-source="rakuten">楽天カード</span></button>
+        <button type="button" data-source="paypay"><span class="source-name" data-source="paypay">PayPay</span></button>
+        <button type="button" data-source="any">わからない</button>
+      </div>
+
+      <p class="section-label">写真</p>
+      <div class="pending-photos" id="pending-photos"></div>
+      <div class="button-row">
+        <button type="button" class="secondary-button" id="pending-photo-pick">写真を選ぶ</button>
+        <button type="button" class="secondary-button" id="pending-photo-camera">カメラで撮る</button>
+      </div>
+      <input type="file" id="pending-photo-input" accept="image/*" multiple hidden>
+      <input type="file" id="pending-camera-input" accept="image/*" capture="environment" hidden>
+
+      <p class="section-label">メモ</p>
+      <textarea class="memo" id="pending-memo" rows="3" placeholder="通勤用のイヤホン"></textarea>
+
+      <button type="button" class="primary-button" id="pending-save">保存</button>
+      <p class="detail-message" id="pending-message" hidden></p>
+      <button type="button" class="text-danger-button" id="pending-delete" hidden>この記録を削除</button>
+    </section>
+
     <!-- ===== お店の辞書の登録・編集 ===== -->
     <section id="screen-shop-edit" class="screen">
       <button type="button" class="back-button" id="shop-edit-back">‹ 戻る</button>
@@ -331,16 +387,17 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/update.js?v=2026110406"></script>
-  <script src="js/db.js?v=2026110406"></script>
-  <script src="js/csv.js?v=2026110406"></script>
-  <script src="js/image.js?v=2026110406"></script>
-  <script src="js/shops.js?v=2026110406"></script>
-  <script src="js/analysis.js?v=2026110406"></script>
-  <script src="js/viewer.js?v=2026110406"></script>
-  <script src="js/settings.js?v=2026110406"></script>
-  <script src="js/shopedit.js?v=2026110406"></script>
-  <script src="js/backup.js?v=2026110406"></script>
-  <script src="js/app.js?v=2026110406"></script>
+  <script src="js/update.js?v=2026110407"></script>
+  <script src="js/db.js?v=2026110407"></script>
+  <script src="js/csv.js?v=2026110407"></script>
+  <script src="js/image.js?v=2026110407"></script>
+  <script src="js/shops.js?v=2026110407"></script>
+  <script src="js/analysis.js?v=2026110407"></script>
+  <script src="js/viewer.js?v=2026110407"></script>
+  <script src="js/settings.js?v=2026110407"></script>
+  <script src="js/shopedit.js?v=2026110407"></script>
+  <script src="js/backup.js?v=2026110407"></script>
+  <script src="js/pending.js?v=2026110407"></script>
+  <script src="js/app.js?v=2026110407"></script>
 </body>
 </html>

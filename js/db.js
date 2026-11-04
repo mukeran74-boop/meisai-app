@@ -5,10 +5,11 @@
 // =========================================================
 
 const DB_NAME = "meisai-db";
-const DB_VERSION = 3; // 写真用の箱で 2、自分で登録したお店の箱で 3 に上げた
+const DB_VERSION = 4; // 写真用の箱で 2、自分で登録したお店の箱で 3、先に記録した買い物の箱で 4
 const STORE = "transactions"; // 取引を入れる箱
 const IMAGE_STORE = "images"; // 写真を入れる箱(取引の id と同じ id で保存)
 const SHOP_STORE = "shops"; // 自分でお店の辞書に登録したお店を入れる箱
+const PENDING_STORE = "pending"; // 明細が届く前に、先に記録した買い物を入れる箱
 
 // データベースを開く(初めてのときや、バージョンが上がったときは箱を作る)
 function openDB() {
@@ -26,6 +27,9 @@ function openDB() {
       }
       if (!db.objectStoreNames.contains(SHOP_STORE)) {
         db.createObjectStore(SHOP_STORE, { keyPath: "id" });
+      }
+      if (!db.objectStoreNames.contains(PENDING_STORE)) {
+        db.createObjectStore(PENDING_STORE, { keyPath: "id" });
       }
     };
 
@@ -132,6 +136,26 @@ function deleteCustomShop(id) {
   });
 }
 
+// ---------- 先に記録した買い物 ----------
+
+function getPendingItems() {
+  return withStore(PENDING_STORE, "readonly", function (store) {
+    return store.getAll();
+  });
+}
+
+function putPendingItem(item) {
+  return withStore(PENDING_STORE, "readwrite", function (store) {
+    store.put(item);
+  });
+}
+
+function deletePendingItem(id) {
+  return withStore(PENDING_STORE, "readwrite", function (store) {
+    store.delete(id);
+  });
+}
+
 // ---------- すべて削除 ----------
 
 // 取引も写真も、自分で登録したお店もすべて削除する(設定画面の「すべてのデータを削除」用)
@@ -143,6 +167,9 @@ async function clearTransactions() {
     store.clear();
   });
   await withStore(SHOP_STORE, "readwrite", function (store) {
+    store.clear();
+  });
+  await withStore(PENDING_STORE, "readwrite", function (store) {
     store.clear();
   });
 }

@@ -146,6 +146,7 @@ function showScreen(screenId) {
   if (["screen-shops", "screen-source", "screen-about"].indexOf(screenId) !== -1) {
     activeTab = "screen-settings";
   }
+  if (screenId === "screen-pending" || screenId === "screen-pending-edit") activeTab = "screen-home";
   if (screenId === "screen-shop-edit") {
     // 詳細画面から来たときは「取引」、辞書の一覧から来たときは「設定」のタブ
     activeTab = shopEditReturn === "screen-detail" ? "screen-list" : "screen-settings";
@@ -165,6 +166,7 @@ function render() {
   renderList();
   renderGraph();
   renderTabBadge();
+  renderPendingHome(); // 明細待ちの記録のカード(pending.js)
 }
 
 // ---------- グラフ画面 ----------
@@ -728,6 +730,12 @@ importInput.addEventListener("change", async function () {
     }
   }
 
+  // 先に記録した買い物に、明細の候補が見つかったら知らせる(pending.js)
+  const found = countPendingWithCandidates();
+  if (found > 0) {
+    messages.push("先に記録した買い物のうち" + found + "件に、明細の候補が見つかりました。下の「明細待ちの記録」から確認できます。");
+  }
+
   // 読み込んだら、一番新しい月を表示する
   state.month = latestMonth();
   render();
@@ -1140,7 +1148,7 @@ document.getElementById("shops-back").addEventListener("click", function () {
 // ---------- すべてのデータを削除 ----------
 
 document.getElementById("clear-button").addEventListener("click", async function () {
-  const ok = window.confirm("読み込んだ明細・写真・メモと、自分で辞書に登録したお店をすべて削除します。元に戻せません。本当に削除しますか?");
+  const ok = window.confirm("読み込んだ明細・写真・メモ、自分で辞書に登録したお店、先に記録した買い物をすべて削除します。元に戻せません。本当に削除しますか?");
   if (!ok) return;
 
   try {
@@ -1148,6 +1156,7 @@ document.getElementById("clear-button").addEventListener("click", async function
     Array.from(imageURLs.keys()).forEach(forgetImageURL);
     forgetCustomShops(); // 自分で登録したお店も消えたので、辞書を作り直す
     renderShopList();
+    pendingItems = []; // 先に記録した買い物も消えた
     state.transactions = [];
     state.month = currentMonth();
     document.getElementById("import-result").hidden = true;
@@ -1211,6 +1220,7 @@ async function init() {
   document.getElementById("app-version").textContent = "バージョン " + APP_VERSION;
 
   await loadShops(); // お店の辞書を読み込む
+  await loadPending(); // 先に記録した買い物を読み込む(pending.js)
   renderShopList();
 
   try {

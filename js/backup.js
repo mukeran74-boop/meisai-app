@@ -59,6 +59,7 @@ async function exportBackup() {
       transactions: state.transactions,
       images: imageData,
       customShops: customShops,
+      pending: pendingItems, // 先に記録した買い物
       settings: { sources: sourceSettings, theme: loadTheme() },
     };
 
@@ -146,6 +147,12 @@ async function importBackup(file) {
     for (const shop of backup.customShops || []) {
       await saveCustomShop(shop);
     }
+
+    // 先に記録した買い物
+    for (const item of backup.pending || []) {
+      await putPendingItem(item);
+    }
+    await loadPending();
 
     // 支払い元の名前と色、画面のモード
     if (backup.settings) {
