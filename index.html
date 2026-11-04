@@ -9,12 +9,12 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <!-- この画面(index.html)の版。update.js が、最新の版と比べるのに使う -->
-  <meta name="app-version" content="2026110410">
+  <meta name="app-version" content="2026110411">
   <title>明細メモ</title>
   <!-- ホーム画面に追加したときのアイコン(iPhone)と、ブラウザのタブのアイコン -->
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=2026110410">
+  <link rel="stylesheet" href="css/style.css?v=2026110411">
 </head>
 <body>
   <main>
@@ -79,8 +79,14 @@
       <div class="list-toolbar">
         <p class="list-total" id="list-total"></p>
         <!-- 押すたびに「未確認だけ」と「すべて」を切り替える -->
-        <button type="button" class="filter-chip" id="unconfirmed-filter">未確認だけ表示</button>
+        <div class="toolbar-buttons">
+          <button type="button" class="filter-chip" id="unconfirmed-filter">未確認だけ表示</button>
+          <!-- まとめて確認済みにするモードの切り替え -->
+          <button type="button" class="filter-chip" id="select-toggle">選ぶ</button>
+        </div>
       </div>
+      <!-- まとめて確認するモードのときだけ出る -->
+      <button type="button" class="text-link-button" id="select-all">表示中の未確認をすべて選ぶ</button>
       <ul class="tx-list" id="tx-list"></ul>
     </section>
 
@@ -374,6 +380,11 @@
     </section>
   </main>
 
+  <!-- ===== まとめて確認済みにする帯(下のタブの上に出る) ===== -->
+  <div class="select-bar" id="select-bar" hidden>
+    <button type="button" class="primary-button" id="select-confirm">取引を選んでください</button>
+  </div>
+
   <!-- ===== ホーム画面に追加する方法の案内 ===== -->
   <!-- Safariで開いたときに自動で表示。ホーム画面から開いたときは出さない -->
   <div class="guide" id="guide" hidden>
@@ -416,17 +427,17 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/update.js?v=2026110410"></script>
-  <script src="js/db.js?v=2026110410"></script>
-  <script src="js/csv.js?v=2026110410"></script>
-  <script src="js/image.js?v=2026110410"></script>
-  <script src="js/shops.js?v=2026110410"></script>
-  <script src="js/analysis.js?v=2026110410"></script>
-  <script src="js/viewer.js?v=2026110410"></script>
-  <script src="js/settings.js?v=2026110410"></script>
-  <script src="js/shopedit.js?v=2026110410"></script>
-  <script src="js/backup.js?v=2026110410"></script>
-  <script src="js/pending.js?v=2026110410"></script>
-  <script src="js/app.js?v=2026110410"></script>
+  <script src="js/update.js?v=2026110411"></script>
+  <script src="js/db.js?v=2026110411"></script>
+  <script src="js/csv.js?v=2026110411"></script>
+  <script src="js/image.js?v=2026110411"></script>
+  <script src="js/shops.js?v=2026110411"></script>
+  <script src="js/analysis.js?v=2026110411"></script>
+  <script src="js/viewer.js?v=2026110411"></script>
+  <script src="js/settings.js?v=2026110411"></script>
+  <script src="js/shopedit.js?v=2026110411"></script>
+  <script src="js/backup.js?v=2026110411"></script>
+  <script src="js/pending.js?v=2026110411"></script>
+  <script src="js/app.js?v=2026110411"></script>
 </body>
 </html>

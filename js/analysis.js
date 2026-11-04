@@ -121,6 +121,34 @@ function countryLabel(code) {
   return COUNTRY_NAMES[code] ? COUNTRY_NAMES[code] + "(" + code + ")" : code;
 }
 
+// ---------- 分割払い・リボ払い ----------
+// 楽天カードの「支払方法」が「3回払い」などのとき、どの月にいくら払うかの目安を出す。
+// 楽天カードは、使った月の翌月から支払いが始まる(デモの明細もこの形)。
+// 1回あたりの金額は、割り切れない分を1回目に足して計算する(実際の金額はカード会社の明細で確認)。
+function installmentInfo(t) {
+  const method = (t.method || "").normalize("NFKC");
+  if (method.indexOf("リボ") !== -1) {
+    return { revolving: true, label: "リボ払い" };
+  }
+  const m = method.match(/(\d+)回払い/);
+  const count = m ? Number(m[1]) : 1;
+  if (count < 2 || t.amount <= 0) return null;
+
+  const each = Math.floor(t.amount / count);
+  const first = t.amount - each * (count - 1);
+  const startMonth = addMonth(t.date.slice(0, 7), 1);
+  const endMonth = addMonth(startMonth, count - 1);
+  return {
+    revolving: false,
+    label: "分割" + count + "回",
+    count: count,
+    first: first,
+    each: each,
+    startMonth: startMonth,
+    endMonth: endMonth,
+  };
+}
+
 // ---------- ジャンルごとの予算 ----------
 // その月の、ジャンルごとの使った金額と予算を比べる(予算を決めたジャンルだけ)
 // 戻り値:[{ name, color, budget, used, ratio }, ...](使った割合の大きい順)

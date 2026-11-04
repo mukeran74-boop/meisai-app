@@ -19,6 +19,8 @@ const state = {
   pieCategory: null, // 円グラフで選んでいるジャンル(なければ null)
   query: "", // 取引一覧の検索の言葉(空なら検索していない)
   photoIndex: 0, // 詳細画面で表示中の写真が何枚目か(0が1枚目)
+  selectMode: false, // まとめて確認済みにするモード
+  selected: new Set(), // まとめて確認するために選んだ取引の id
 };
 
 // 写真を画面に表示するための一時的なURLを覚えておく(取引の id → URL)
@@ -140,6 +142,16 @@ function showScreen(screenId) {
   document.querySelectorAll(".screen").forEach(function (screen) {
     screen.classList.toggle("is-active", screen.id === screenId);
   });
+  // 取引一覧から離れたら、まとめて確認するモードは終わりにする
+  if (state.selectMode && screenId !== "screen-list") {
+    state.selectMode = false;
+    state.selected = new Set();
+    document.getElementById("screen-list").classList.remove("is-selecting");
+    document.getElementById("select-toggle").textContent = "選ぶ";
+    renderSelectBar();
+    renderList();
+  }
+
   // 詳細画面は「取引」タブ、お店の辞書は「設定」タブの中の画面として扱う
   let activeTab = screenId;
   if (screenId === "screen-detail") activeTab = "screen-list";
@@ -553,6 +565,7 @@ function renderList() {
     return kb.localeCompare(ka);
   });
 
+  visibleList = list; // まとめて確認の「すべて選ぶ」で使う
   document.getElementById("list-total").textContent =
     (searching ? "全期間から " : "") + list.length + "件・合計 " + yen(sum(list));
 
@@ -578,6 +591,67 @@ function renderList() {
   });
 }
 
+// ---------- まとめて確認済みにする ----------
+// サブスクのように見覚えがはっきりしている取引を、1件ずつ開かずに確認済みにする。
+// 「選ぶ」を押すと一覧の行にチェック欄が出て、選んだものをまとめて確認済みにできる。
+
+// 今の一覧に表示されている取引(月・支払い元・未確認だけ・検索の条件どおり)
+let visibleList = [];
+
+function toggleSelected(id, li) {
+  if (state.selected.has(id)) state.selected.delete(id);
+  else state.selected.add(id);
+  li.classList.toggle("is-checked", state.selected.has(id));
+  renderSelectBar();
+}
+
+function setSelectMode(on) {
+  state.selectMode = on;
+  state.selected = new Set();
+  document.getElementById("screen-list").classList.toggle("is-selecting", on);
+  document.getElementById("select-toggle").textContent = on ? "やめる" : "選ぶ";
+  renderList();
+  renderSelectBar();
+}
+
+// 画面の下に出る「◯件を確認済みにする」の帯
+function renderSelectBar() {
+  const bar = document.getElementById("select-bar");
+  bar.hidden = !state.selectMode;
+  const n = state.selected.size;
+  const button = document.getElementById("select-confirm");
+  button.textContent = n > 0 ? n + "件を確認済みにする" : "取引を選んでください";
+  button.disabled = n === 0;
+}
+
+document.getElementById("select-toggle").addEventListener("click", function () {
+  setSelectMode(!state.selectMode);
+});
+
+// 表示中の未確認の取引をすべて選ぶ
+document.getElementById("select-all").addEventListener("click", function () {
+  visibleList.forEach(function (t) {
+    if (t.status === "unconfirmed") state.selected.add(t.id);
+  });
+  renderList();
+  renderSelectBar();
+});
+
+document.getElementById("select-confirm").addEventListener("click", async function () {
+  const items = state.transactions.filter(function (t) { return state.selected.has(t.id); });
+  if (items.length === 0) return;
+  if (!window.confirm(items.length + "件の取引を確認済みにします。よろしいですか?")) return;
+  try {
+    items.forEach(function (t) { t.status = "confirmed"; });
+    await addTransactions(items); // 同じ id で上書き保存する
+    setSelectMode(false);
+    render();
+  } catch (error) {
+    console.error(error);
+    window.alert("保存できませんでした。もう一度お試しください。");
+  }
+});
+
 // ---------- 検索 ----------
 // 店名(辞書の名前・明細の表記)、メモ、ジャンル、金額で、全期間の取引から探す
 // 「スーパー 10月」のように空白で区切ると、すべての言葉を含む取引だけに絞る
@@ -602,6 +676,7 @@ function searchTransactions(query) {
         SOURCE_NAMES[t.source],
         month,
         overseasCountry(t) ? "海外 " + countryLabel(overseasCountry(t)) : "",
+        installmentInfo(t) ? installmentInfo(t).label + " 分割払い" : "",
         String(Math.abs(t.amount)), // 3280
         Math.abs(t.amount).toLocaleString("ja-JP"), // 3,280
       ].join(" ")
@@ -635,9 +710,22 @@ function createTransactionRow(t, withYear) {
   const li = document.createElement("li");
   li.className = "tx";
 
-  // タップすると詳細画面を開く
+  // まとめて確認するモードのときは、タップで「選ぶ/選ばない」を切り替える
+  // ふだんは、タップすると詳細画面を開く
+  if (state.selectMode) {
+    li.classList.add("is-selectable");
+    if (state.selected.has(t.id)) li.classList.add("is-checked");
+    const check = document.createElement("span");
+    check.className = "select-check";
+    check.setAttribute("aria-hidden", "true");
+    li.appendChild(check);
+  }
   li.addEventListener("click", function () {
-    openDetail(t.id);
+    if (state.selectMode) {
+      toggleSelected(t.id, li);
+    } else {
+      openDetail(t.id);
+    }
   });
 
   // 写真があれば写真、なければお店の辞書のカテゴリのアイコン
@@ -690,6 +778,15 @@ function createTransactionRow(t, withYear) {
     mark.textContent = "・未確認";
     sub.appendChild(mark);
   }
+  // 分割払い・リボ払いの取引には印を付ける
+  const installment = installmentInfo(t);
+  if (installment) {
+    const tag = document.createElement("span");
+    tag.className = "installment-tag";
+    tag.textContent = installment.label;
+    name.appendChild(tag);
+  }
+
   // 海外で使った取引には「海外」の印を付ける(見覚えのない海外利用は不正利用のよくある例)
   const country = overseasCountry(t);
   if (country) {
@@ -996,6 +1093,20 @@ async function renderDetail() {
     ["カテゴリ", shop ? shop.category : "辞書に登録なし"],
   ];
   if (shop && shop.description) rows.push(["説明", shop.description]);
+
+  // 分割払い:どの月にいくら払うかの目安
+  const installment = installmentInfo(t);
+  if (installment && installment.revolving) {
+    rows.push(["支払い", "リボ払い。毎月の支払額は、カード会社で決めた設定によって変わります。"]);
+  } else if (installment) {
+    const label = function (m) { return Number(m.slice(5)) + "月"; };
+    let text =
+      installment.count + "回に分けて支払い(" + label(installment.startMonth) + "〜" + label(installment.endMonth) + "の支払い)。1回あたり約" +
+      yen(installment.each);
+    if (installment.first !== installment.each) text += "(1回目は" + yen(installment.first) + ")";
+    text += "。金額は目安です。";
+    rows.push(["支払い", text]);
+  }
 
   // お店の辞書のボタンの文字(登録の状態によって変える)
   document.getElementById("detail-shop-edit").textContent =
