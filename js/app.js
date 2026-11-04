@@ -757,9 +757,13 @@ function createTransactionRow(t, withYear) {
   // 店名(辞書にあれば分かりやすい名前)と日付など
   const body = document.createElement("div");
   body.className = "tx-body";
+  // 店名とタグを横に並べる。幅が足りないときは店名の方を「…」で省略し、タグは必ず見せる
   const name = document.createElement("div");
-  name.className = "tx-name";
-  name.textContent = displayName(t);
+  name.className = "tx-name tx-name-row";
+  const nameText = document.createElement("span");
+  nameText.className = "tx-name-text";
+  nameText.textContent = displayName(t);
+  name.appendChild(nameText);
   const sub = document.createElement("div");
   sub.className = "tx-sub";
   // 支払い元の色の点(楽天カード=オレンジ、PayPay=青)

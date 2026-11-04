@@ -1012,6 +1012,27 @@ main {
   vertical-align: 0.1rem;
 }
 
+/* ---------- 店名とタグの並び ---------- */
+/* 文字サイズ「大」でもタグが隠れないよう、店名だけを縮める */
+.tx-name-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.tx-name-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tx-name-row .installment-tag,
+.tx-name-row .overseas-tag {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* ---------- 分割払いの印 ---------- */
 .installment-tag {
   display: inline-block;
