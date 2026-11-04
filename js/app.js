@@ -775,7 +775,9 @@ function createTransactionRow(t, withYear) {
     md = t.date.slice(0, 4) + "/" + md;
   }
   // メモがあればメモ、なければ支払い元を表示する
-  sub.append(dot, md + (t.time ? " " + t.time : "") + "・" + (t.memo || SOURCE_NAMES[t.source]));
+  // 分割払いは「この日に買った」と分かるように「購入」と付ける
+  const bought = installmentInfo(t) ? "購入 " : "";
+  sub.append(dot, bought + md + (t.time ? " " + t.time : "") + "・" + (t.memo || SOURCE_NAMES[t.source]));
   if (t.status === "unconfirmed") {
     const mark = document.createElement("span");
     mark.className = "unconfirmed";
@@ -1088,7 +1090,7 @@ async function renderDetail() {
   // 日時・支払い元・支払い方法
   const parts = t.date.split("-").map(Number);
   const rows = [
-    ["日時", parts[0] + "年" + parts[1] + "月" + parts[2] + "日" + (t.time ? " " + t.time : "")],
+    ["買った日時", parts[0] + "年" + parts[1] + "月" + parts[2] + "日" + (t.time ? " " + t.time : "")],
     ["支払い元", SOURCE_NAMES[t.source]],
     ["支払い方法", t.method || "-"],
     // 海外で使ったときは利用国も出す
@@ -1103,13 +1105,39 @@ async function renderDetail() {
   if (installment && installment.revolving) {
     rows.push(["支払い", "リボ払い。毎月の支払額は、カード会社で決めた設定によって変わります。"]);
   } else if (installment) {
-    const label = function (m) { return Number(m.slice(5)) + "月"; };
-    let text =
-      installment.count + "回に分けて支払い(" + label(installment.startMonth) + "〜" + label(installment.endMonth) + "の支払い)。1回あたり約" +
-      yen(installment.each);
-    if (installment.first !== installment.each) text += "(1回目は" + yen(installment.first) + ")";
-    text += "。金額は目安です。";
-    rows.push(["支払い", text]);
+    // 月ごとの内訳を1行ずつ並べる(例:2026年8月 19,934円)
+    const list = document.createElement("ul");
+    list.className = "installment-list";
+    let month = installment.startMonth;
+    for (let i = 0; i < installment.count; i++) {
+      const li = document.createElement("li");
+      const m = document.createElement("span");
+      m.textContent = Number(month.slice(0, 4)) + "年" + Number(month.slice(5)) + "月";
+      const v = document.createElement("span");
+      v.textContent = yen(i === 0 ? installment.first : installment.each);
+      li.append(m, v);
+      list.appendChild(li);
+      month = addMonth(month, 1);
+    }
+    const note = document.createElement("p");
+    note.className = "installment-note";
+    note.textContent = installment.count + "回に分けて支払い。金額は目安です(実際の金額はカード会社の明細で確認してください)。";
+    const box = document.createElement("div");
+    box.append(list, note);
+    rows.push(["支払い", box]);
+  }
+
+  // 分割払いのときは、上の金額が「買い物の総額」だと分かるように一言出す
+  const amountNote = document.getElementById("detail-amount-note");
+  if (installment && !installment.revolving) {
+    amountNote.textContent =
+      parts[1] + "/" + parts[2] + "の買い物の総額。" + Number(installment.startMonth.slice(5)) + "月から" + installment.count + "回に分けて支払います。";
+    amountNote.hidden = false;
+  } else if (installment) {
+    amountNote.textContent = parts[1] + "/" + parts[2] + "の買い物の総額。リボ払いで少しずつ支払います。";
+    amountNote.hidden = false;
+  } else {
+    amountNote.hidden = true;
   }
 
   // お店の辞書のボタンの文字(登録の状態によって変える)
@@ -1121,7 +1149,9 @@ async function renderDetail() {
     const dt = document.createElement("dt");
     dt.textContent = row[0];
     const dd = document.createElement("dd");
-    dd.textContent = row[1];
+    // 文字だけでなく、内訳のリストなどの部品も入れられるようにする
+    if (row[1] instanceof Node) dd.appendChild(row[1]);
+    else dd.textContent = row[1];
     info.append(dt, dd);
   });
 

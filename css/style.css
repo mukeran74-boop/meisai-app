@@ -1046,6 +1046,43 @@ main {
   vertical-align: 0.1rem;
 }
 
+/* 分割払いの月ごとの内訳 */
+.detail-amount-note {
+  font-size: 0.8125rem;
+  color: var(--text-sub);
+  margin: 0.25rem 0 0;
+}
+
+.installment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.installment-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.125rem 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.installment-list li span:last-child {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.installment-note {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  margin: 0.25rem 0 0;
+}
+
+.graph-note {
+  text-align: left;
+  margin: 0 0 0.5rem;
+}
+
 /* ---------- まとめて確認済みにする ---------- */
 .toolbar-buttons {
   display: flex;
