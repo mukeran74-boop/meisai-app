@@ -18,6 +18,7 @@ const state = {
   detailId: null, // 詳細画面で表示中の取引の id
   pieCategory: null, // 円グラフで選んでいるジャンル(なければ null)
   query: "", // 取引一覧の検索の言葉(空なら検索していない)
+  photoIndex: 0, // 詳細画面で表示中の写真が何枚目か(0が1枚目)
 };
 
 // 写真を画面に表示するための一時的なURLを覚えておく(取引の id → URL)
@@ -40,6 +41,21 @@ function forgetImageURL(id) {
     imageURLs.delete(id);
   }
 }
+
+// 取引に付いている写真の id の一覧
+// (写真を1枚しか付けられなかった頃の取引は、取引の id がそのまま写真の id)
+function imageIdsOf(t) {
+  if (Array.isArray(t.imageIds)) return t.imageIds;
+  return t.hasImage ? [t.id] : [];
+}
+
+// 写真の一覧を取引に書き込む
+function setImageIds(t, ids) {
+  t.imageIds = ids;
+  t.hasImage = ids.length > 0;
+}
+
+const MAX_PHOTOS = 10; // 1件の取引に付けられる写真の枚数
 
 // id から取引を探す
 function findTransaction(id) {
@@ -573,8 +589,9 @@ function createTransactionRow(t, withYear) {
   icon.className = "tx-icon";
   icon.style.background = categoryOf(t).color;
   icon.appendChild(createCategoryIcon(t));
-  if (t.hasImage) {
-    getImageURL(t.id).then(function (url) {
+  const ids = imageIdsOf(t);
+  if (ids.length > 0) {
+    getImageURL(ids[0]).then(function (url) {
       if (!url) return;
       const img = document.createElement("img");
       img.src = url;
@@ -582,6 +599,14 @@ function createTransactionRow(t, withYear) {
       icon.innerHTML = "";
       icon.style.background = "transparent";
       icon.appendChild(img);
+      // 写真が2枚以上あるときは、枚数の印を付けて重なった見た目にする
+      if (ids.length > 1) {
+        icon.classList.add("has-many");
+        const count = document.createElement("span");
+        count.className = "photo-count";
+        count.textContent = ids.length + "枚";
+        icon.appendChild(count);
+      }
     });
   }
 
@@ -787,6 +812,7 @@ function showImportResult(text, isError) {
 // 詳細画面を開く
 function openDetail(id) {
   state.detailId = id;
+  state.photoIndex = 0; // 1枚目の写真から表示する
   hideDetailMessage();
   renderDetail();
   showScreen("screen-detail");
@@ -798,23 +824,69 @@ async function renderDetail() {
   if (!t) return;
 
   // 写真(なければ仮のアイコン)
+  // 複数枚あるときは横に並べ、指で横にスワイプして切り替える
   const photo = document.getElementById("detail-photo");
   photo.innerHTML = "";
   photo.className = "detail-photo";
-  if (t.hasImage) {
-    const url = await getImageURL(t.id);
-    if (url) {
-      const img = document.createElement("img");
-      img.src = url;
-      img.alt = t.name + "の写真";
-      // タップすると拡大表示(viewer.js)
-      img.addEventListener("click", function () {
-        openViewer(url);
+  const ids = imageIdsOf(t);
+  if (state.photoIndex >= ids.length) state.photoIndex = Math.max(0, ids.length - 1);
+
+  if (ids.length > 0) {
+    const track = document.createElement("div");
+    track.className = "photo-track";
+    for (const id of ids) {
+      const url = await getImageURL(id);
+      const slide = document.createElement("div");
+      slide.className = "photo-slide";
+      if (url) {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = t.name + "の写真";
+        // タップすると拡大表示(viewer.js)
+        img.addEventListener("click", function () {
+          openViewer(url);
+        });
+        slide.appendChild(img);
+      }
+      track.appendChild(slide);
+    }
+    photo.appendChild(track);
+
+    const zoomHint = document.createElement("span");
+    zoomHint.className = "zoom-hint";
+    zoomHint.textContent = "タップで拡大";
+    photo.appendChild(zoomHint);
+
+    // 2枚以上:「1/3」の表示と、下の点(今何枚目か)
+    if (ids.length > 1) {
+      const counter = document.createElement("span");
+      counter.className = "photo-counter";
+      const dots = document.createElement("div");
+      dots.className = "photo-dots";
+      ids.forEach(function () {
+        dots.appendChild(document.createElement("span"));
       });
-      const zoomHint = document.createElement("span");
-      zoomHint.className = "zoom-hint";
-      zoomHint.textContent = "タップで拡大";
-      photo.append(img, zoomHint);
+      photo.append(counter, dots);
+
+      const updateIndicator = function () {
+        counter.textContent = state.photoIndex + 1 + "/" + ids.length + "枚";
+        Array.from(dots.children).forEach(function (dot, i) {
+          dot.classList.toggle("is-current", i === state.photoIndex);
+        });
+      };
+      // スワイプして止まった位置から、何枚目かを求める
+      track.addEventListener("scroll", function () {
+        const index = Math.round(track.scrollLeft / track.clientWidth);
+        if (index !== state.photoIndex) {
+          state.photoIndex = index;
+          updateIndicator();
+        }
+      });
+      updateIndicator();
+      // 前に見ていた写真の位置に戻す(写真を追加・削除したあとなど)
+      requestAnimationFrame(function () {
+        track.scrollLeft = state.photoIndex * track.clientWidth;
+      });
     }
   } else {
     // 写真がないときは、カテゴリの色とアイコンを大きく表示する
@@ -825,8 +897,11 @@ async function renderDetail() {
     hint.textContent = "写真はまだありません";
     photo.append(createCategoryIcon(t), hint);
   }
-  if (t.hasImage) photo.style.background = "";
-  document.getElementById("photo-delete").hidden = !t.hasImage;
+  if (ids.length > 0) photo.style.background = "";
+  const deleteButton = document.getElementById("photo-delete");
+  deleteButton.hidden = ids.length === 0;
+  deleteButton.textContent = ids.length > 1 ? "表示中の写真を削除" : "写真を削除";
+  document.getElementById("photo-pick").textContent = ids.length > 0 ? "写真を追加" : "写真を選ぶ";
 
   // 店名(辞書の名前)・明細の元の表記・金額
   const shop = findShop(t);
@@ -933,22 +1008,40 @@ document.getElementById("photo-camera").addEventListener("click", function () {
 });
 
 // 写真が選ばれたら、縮小して保存する(写真を付けたら確認済みにする)
+// 写真フォルダからは何枚かまとめて選べる。今ある写真の後ろに追加する
 async function handlePhoto(input) {
-  const file = input.files[0];
+  const files = Array.from(input.files);
   input.value = ""; // 同じ写真をもう一度選んでも反応するように空にする
   const t = findTransaction(state.detailId);
-  if (!file || !t) return;
+  if (files.length === 0 || !t) return;
+
+  const ids = imageIdsOf(t).slice();
+  const room = MAX_PHOTOS - ids.length;
+  if (room <= 0) {
+    showDetailMessage("写真は1件の取引に" + MAX_PHOTOS + "枚まで付けられます。", true);
+    return;
+  }
 
   showDetailMessage("写真を保存しています…", false);
   try {
-    const blob = await resizeImage(file);
-    await putImage(t.id, blob);
-    forgetImageURL(t.id); // 前の写真の表示用URLを片付ける
-    t.hasImage = true;
-    let message = "写真を保存しました。";
+    const targets = files.slice(0, room);
+    for (let i = 0; i < targets.length; i++) {
+      const blob = await resizeImage(targets[i]);
+      // 写真の id:取引の id + 追加した時刻(取引ごとに何枚でも区別できるように)
+      const imageId = t.id + "#p" + Date.now() + "-" + i;
+      await putImage(imageId, blob);
+      ids.push(imageId);
+    }
+    setImageIds(t, ids);
+    state.photoIndex = ids.length - 1; // 追加した写真を表示する
+
+    let message = targets.length + "枚の写真を保存しました。";
+    if (files.length > targets.length) {
+      message += "(" + MAX_PHOTOS + "枚までのため、" + (files.length - targets.length) + "枚は追加していません)";
+    }
     if (t.status === "unconfirmed") {
       t.status = "confirmed";
-      message = "写真を保存し、確認済みにしました。";
+      message += "確認済みにしました。";
     }
     await saveTransaction(t, message);
   } catch (error) {
@@ -964,15 +1057,21 @@ document.getElementById("camera-input").addEventListener("change", function () {
   handlePhoto(this);
 });
 
-// 写真を削除(確認の状態はそのまま)
+// 表示中の写真を削除(確認の状態はそのまま)
 document.getElementById("photo-delete").addEventListener("click", async function () {
   const t = findTransaction(state.detailId);
   if (!t) return;
-  if (!window.confirm("この取引の写真を削除しますか?")) return;
+  const ids = imageIdsOf(t).slice();
+  if (ids.length === 0) return;
+  const index = Math.min(state.photoIndex, ids.length - 1);
+  const question = ids.length > 1 ? index + 1 + "枚目の写真を削除しますか?" : "この取引の写真を削除しますか?";
+  if (!window.confirm(question)) return;
   try {
-    await deleteImage(t.id);
-    forgetImageURL(t.id);
-    t.hasImage = false;
+    const removed = ids.splice(index, 1)[0];
+    await deleteImage(removed);
+    forgetImageURL(removed);
+    setImageIds(t, ids);
+    state.photoIndex = Math.max(0, index - 1);
     await saveTransaction(t, "写真を削除しました。");
   } catch (error) {
     console.error(error);

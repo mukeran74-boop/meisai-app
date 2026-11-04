@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <!-- この画面(index.html)の版。update.js が、最新の版と比べるのに使う -->
-  <meta name="app-version" content="2026110404">
+  <meta name="app-version" content="2026110405">
   <title>明細メモ</title>
-  <link rel="stylesheet" href="css/style.css?v=2026110404">
+  <link rel="stylesheet" href="css/style.css?v=2026110405">
 </head>
 <body>
   <main>
@@ -106,7 +106,7 @@
       </div>
       <button type="button" class="text-danger-button" id="photo-delete" hidden>写真を削除</button>
       <!-- 本物の選択欄は隠し、上のボタンから呼び出す -->
-      <input type="file" id="photo-input" accept="image/*" hidden>
+      <input type="file" id="photo-input" accept="image/*" multiple hidden>
       <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
 
       <p class="section-label">メモ</p>
@@ -325,16 +325,16 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/update.js?v=2026110404"></script>
-  <script src="js/db.js?v=2026110404"></script>
-  <script src="js/csv.js?v=2026110404"></script>
-  <script src="js/image.js?v=2026110404"></script>
-  <script src="js/shops.js?v=2026110404"></script>
-  <script src="js/analysis.js?v=2026110404"></script>
-  <script src="js/viewer.js?v=2026110404"></script>
-  <script src="js/settings.js?v=2026110404"></script>
-  <script src="js/shopedit.js?v=2026110404"></script>
-  <script src="js/backup.js?v=2026110404"></script>
-  <script src="js/app.js?v=2026110404"></script>
+  <script src="js/update.js?v=2026110405"></script>
+  <script src="js/db.js?v=2026110405"></script>
+  <script src="js/csv.js?v=2026110405"></script>
+  <script src="js/image.js?v=2026110405"></script>
+  <script src="js/shops.js?v=2026110405"></script>
+  <script src="js/analysis.js?v=2026110405"></script>
+  <script src="js/viewer.js?v=2026110405"></script>
+  <script src="js/settings.js?v=2026110405"></script>
+  <script src="js/shopedit.js?v=2026110405"></script>
+  <script src="js/backup.js?v=2026110405"></script>
+  <script src="js/app.js?v=2026110405"></script>
 </body>
 </html>

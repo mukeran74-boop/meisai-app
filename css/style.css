@@ -786,6 +786,90 @@ main {
   cursor: pointer;
 }
 
+/* ---------- 写真の複数枚表示 ---------- */
+/* 写真を横に並べ、指でスワイプすると1枚ずつぴったり止まるようにする */
+.photo-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none; /* スクロールバーを隠す */
+}
+
+.photo-track::-webkit-scrollbar {
+  display: none;
+}
+
+.photo-slide {
+  flex: 0 0 100%;
+  height: 100%;
+  scroll-snap-align: start;
+}
+
+/* 右上の「1/3枚」 */
+.photo-counter {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+/* 下の点(今何枚目か) */
+.photo-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.6rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  pointer-events: none;
+}
+
+.photo-dots span {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.photo-dots span.is-current {
+  background: #ffffff;
+}
+
+/* 一覧:写真が2枚以上ある取引は、後ろに写真が重なっているように見せ、枚数を付ける */
+.tx-icon.has-many {
+  position: relative;
+  overflow: visible;
+  box-shadow: 3px -3px 0 -1px var(--surface), 3px -3px 0 0 var(--border),
+    6px -6px 0 -1px var(--surface), 6px -6px 0 0 var(--border);
+}
+
+.tx-icon.has-many img {
+  border-radius: 8px;
+}
+
+.photo-count {
+  position: absolute;
+  right: -0.35rem;
+  bottom: -0.35rem;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.2rem 0.3rem;
+  border-radius: 999px;
+  border: 2px solid var(--bg);
+}
+
 /* ---------- 写真の拡大表示 ---------- */
 .detail-photo {
   position: relative; /* 「タップで拡大」の文字を写真の上に重ねるため */
