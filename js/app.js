@@ -21,6 +21,7 @@ const state = {
   photoIndex: 0, // 詳細画面で表示中の写真が何枚目か(0が1枚目)
   selectMode: false, // まとめて確認済みにするモード
   selected: new Set(), // まとめて確認するために選んだ取引の id
+  barMode: "use", // 棒グラフの見方 "use"(買った月)/ "pay"(支払う月)
 };
 
 // 写真を画面に表示するための一時的なURLを覚えておく(取引の id → URL)
@@ -323,7 +324,19 @@ function renderSubscriptions() {
 // 月ごとの利用額(棒グラフ):表示中の月までの6か月分
 // 棒は div の高さを変えて描く(楽天カードとPayPayを積み上げる)
 function renderBarChart() {
-  const data = monthlyTotals(recentMonths(state.month, 6));
+  const pay = state.barMode === "pay";
+  const months = recentMonths(state.month, 6);
+  const data = pay ? monthlyPayments(months) : monthlyTotals(months);
+
+  // 切り替えボタン・見出し・説明の文字
+  document.querySelectorAll("#bar-mode button").forEach(function (button) {
+    button.classList.toggle("is-selected", button.dataset.mode === state.barMode);
+  });
+  document.getElementById("bar-title").textContent = pay ? "月ごとの支払う額(目安)" : "月ごとの利用額";
+  document.getElementById("bar-note").textContent = pay
+    ? "お金が出ていく月で集計しています。楽天カードは「月末締め・翌月27日払い」、分割払いは払う月ごとに分けて入れています。PayPayは買った月です。"
+    : "買った日の月で集計しています。分割払いも、買った月にまとめて入ります。";
+  renderPaySummary(pay);
   const max = Math.max.apply(null, data.map(function (d) { return d.total; }).concat([1]));
 
   const chart = document.getElementById("bar-chart");
@@ -366,6 +379,49 @@ function renderBarChart() {
 
     chart.appendChild(col);
   });
+}
+
+// 支払う月で見るときの、選んだ月の内訳(合計・支払い元ごと・分割払いの分)
+function renderPaySummary(pay) {
+  const box = document.getElementById("pay-summary");
+  box.hidden = !pay;
+  box.innerHTML = "";
+  if (!pay) return;
+
+  const list = paymentsOfMonth(state.month);
+  let rakuten = 0;
+  let paypay = 0;
+  const installments = [];
+  list.forEach(function (p) {
+    if (p.t.source === "rakuten") rakuten += p.amount;
+    else paypay += p.amount;
+    if (p.count) installments.push(p);
+  });
+
+  const title = document.createElement("p");
+  title.className = "pay-summary-title";
+  title.textContent = Number(state.month.slice(5)) + "月に払う額(目安):" + yen(rakuten + paypay);
+  box.appendChild(title);
+
+  const rows = document.createElement("ul");
+  rows.className = "installment-list";
+  function addRow(labelText, value, sub) {
+    const li = document.createElement("li");
+    if (sub) li.className = "is-sub";
+    const a = document.createElement("span");
+    a.textContent = labelText;
+    const b = document.createElement("span");
+    b.textContent = yen(value);
+    li.append(a, b);
+    rows.appendChild(li);
+  }
+  addRow(SOURCE_NAMES.rakuten + "(" + Number(addMonth(state.month, -1).slice(5)) + "月に買った分など)", rakuten);
+  // その月に払う分割払いを1件ずつ出す(例:家電販売店エース 2/3回目)
+  installments.forEach(function (p) {
+    addRow("└ " + displayName(p.t) + " 分割" + p.part + "/" + p.count + "回目", p.amount, true);
+  });
+  addRow(SOURCE_NAMES.paypay + "(" + Number(state.month.slice(5)) + "月に買った分)", paypay);
+  box.appendChild(rows);
 }
 
 // この月の内訳(円グラフ):ジャンルごとの割合を、CSSの conic-gradient で描く
@@ -862,6 +918,24 @@ function setSourceFilter(source) {
 document.querySelectorAll("#source-filter button").forEach(function (button) {
   button.addEventListener("click", function () {
     setSourceFilter(button.dataset.source);
+  });
+});
+
+// グラフの「買った月で見る/支払う月で見る」の切り替え(選んだほうを覚えておく)
+try {
+  if (localStorage.getItem("meisai-bar-mode") === "pay") state.barMode = "pay";
+} catch (error) {
+  // 保存できない環境では、毎回「買った月」から始める
+}
+document.querySelectorAll("#bar-mode button").forEach(function (button) {
+  button.addEventListener("click", function () {
+    state.barMode = button.dataset.mode;
+    try {
+      localStorage.setItem("meisai-bar-mode", state.barMode);
+    } catch (error) {
+      // 覚えられなくても表示の切り替えはできる
+    }
+    renderBarChart();
   });
 });
 

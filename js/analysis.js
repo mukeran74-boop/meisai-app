@@ -28,6 +28,55 @@ function monthlyTotals(months) {
   });
 }
 
+// ---------- 支払う月で見る ----------
+// 1件の取引を「どの月に、いくら払うか」に分ける
+// ・PayPay(残高払い):買ったその場でお金が減るので、買った月
+// ・楽天カード:月末締め・翌月27日払いとして、買った月の次の月
+// ・楽天カードの分割払い:次の月から、回数分の月に分けて払う
+// 戻り値の例:[{ month: "2026-08", amount: 19934, part: 1, count: 3 }, ...]
+function paymentPortions(t) {
+  const month = t.date.slice(0, 7);
+  if (t.source !== "rakuten") return [{ month: month, amount: t.amount }];
+  const info = installmentInfo(t);
+  if (info && !info.revolving) {
+    const list = [];
+    let m = info.startMonth;
+    for (let i = 0; i < info.count; i++) {
+      list.push({ month: m, amount: i === 0 ? info.first : info.each, part: i + 1, count: info.count });
+      m = addMonth(m, 1);
+    }
+    return list;
+  }
+  // 1回払い(リボ払いは毎月の額が分からないので、目安として全額を次の月に入れる)
+  return [{ month: addMonth(month, 1), amount: t.amount }];
+}
+
+// 指定した月に払う分の一覧:[{ t, amount, part, count }, ...]
+function paymentsOfMonth(month) {
+  const list = [];
+  state.transactions.forEach(function (t) {
+    paymentPortions(t).forEach(function (p) {
+      if (p.month === month) list.push({ t: t, amount: p.amount, part: p.part, count: p.count });
+    });
+  });
+  return list;
+}
+
+// 月ごと・支払い元ごとの「支払う額」(棒グラフ用)。形は monthlyTotals と同じ
+function monthlyPayments(months) {
+  return months.map(function (m) {
+    let rakuten = 0;
+    let paypay = 0;
+    let installment = 0;
+    paymentsOfMonth(m).forEach(function (p) {
+      if (p.t.source === "rakuten") rakuten += p.amount;
+      else paypay += p.amount;
+      if (p.count) installment += p.amount;
+    });
+    return { month: m, rakuten: rakuten, paypay: paypay, total: rakuten + paypay, installment: installment };
+  });
+}
+
 // お店ごとの合計(円グラフ用)
 // お店の辞書で同じ店にまとめる(駅前店と大学通り店 → コンビニエンスA)
 // 戻り値は金額の多い順:[{ key, name, category, amount }, ...]

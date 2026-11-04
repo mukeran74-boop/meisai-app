@@ -9,12 +9,12 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <!-- この画面(index.html)の版。update.js が、最新の版と比べるのに使う -->
-  <meta name="app-version" content="2026110413">
+  <meta name="app-version" content="2026110414">
   <title>明細メモ</title>
   <!-- ホーム画面に追加したときのアイコン(iPhone)と、ブラウザのタブのアイコン -->
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=2026110413">
+  <link rel="stylesheet" href="css/style.css?v=2026110414">
 </head>
 <body>
   <main>
@@ -143,13 +143,20 @@
       </div>
 
       <!-- 月ごとの利用額(棒グラフ)。棒をタップするとその月に切り替わる -->
-      <h2 class="graph-title">月ごとの利用額</h2>
-      <p class="hint graph-note">買った日の月で集計しています。分割払いも、買った月にまとめて入ります。</p>
+      <h2 class="graph-title" id="bar-title">月ごとの利用額</h2>
+      <!-- 「買った月」で見るか「支払う月」で見るかの切り替え -->
+      <div class="segmented bar-mode" id="bar-mode">
+        <button type="button" data-mode="use" class="is-selected">買った月で見る</button>
+        <button type="button" data-mode="pay">支払う月で見る</button>
+      </div>
+      <p class="hint graph-note" id="bar-note"></p>
       <div class="bar-chart" id="bar-chart"></div>
       <p class="legend">
         <span class="source-dot" style="background: var(--rakuten)"></span><span class="source-name" data-source="rakuten">楽天カード</span>
         <span class="source-dot" style="background: var(--paypay); margin-left: 0.75rem"></span><span class="source-name" data-source="paypay">PayPay</span>
       </p>
+      <!-- 支払う月で見るときの、選んだ月の支払いの内訳 -->
+      <div class="pay-summary" id="pay-summary" hidden></div>
 
       <!-- この月の内訳(円グラフ) -->
       <h2 class="graph-title" id="pie-title">この月の内訳</h2>
@@ -430,17 +437,17 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/update.js?v=2026110413"></script>
-  <script src="js/db.js?v=2026110413"></script>
-  <script src="js/csv.js?v=2026110413"></script>
-  <script src="js/image.js?v=2026110413"></script>
-  <script src="js/shops.js?v=2026110413"></script>
-  <script src="js/analysis.js?v=2026110413"></script>
-  <script src="js/viewer.js?v=2026110413"></script>
-  <script src="js/settings.js?v=2026110413"></script>
-  <script src="js/shopedit.js?v=2026110413"></script>
-  <script src="js/backup.js?v=2026110413"></script>
-  <script src="js/pending.js?v=2026110413"></script>
-  <script src="js/app.js?v=2026110413"></script>
+  <script src="js/update.js?v=2026110414"></script>
+  <script src="js/db.js?v=2026110414"></script>
+  <script src="js/csv.js?v=2026110414"></script>
+  <script src="js/image.js?v=2026110414"></script>
+  <script src="js/shops.js?v=2026110414"></script>
+  <script src="js/analysis.js?v=2026110414"></script>
+  <script src="js/viewer.js?v=2026110414"></script>
+  <script src="js/settings.js?v=2026110414"></script>
+  <script src="js/shopedit.js?v=2026110414"></script>
+  <script src="js/backup.js?v=2026110414"></script>
+  <script src="js/pending.js?v=2026110414"></script>
+  <script src="js/app.js?v=2026110414"></script>
 </body>
 </html>
