@@ -98,6 +98,13 @@ async function getImage(id) {
   return record ? record.blob : null;
 }
 
+// 写真をすべて取り出す(バックアップ用) [{ id, blob }, ...]
+function getAllImages() {
+  return withStore(IMAGE_STORE, "readonly", function (store) {
+    return store.getAll();
+  });
+}
+
 // 写真を削除する
 function deleteImage(id) {
   return withStore(IMAGE_STORE, "readwrite", function (store) {

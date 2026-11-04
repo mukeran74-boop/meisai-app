@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="明細メモ">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>明細メモ</title>
-  <link rel="stylesheet" href="css/style.css?v=2026110402">
+  <link rel="stylesheet" href="css/style.css?v=2026110403">
 </head>
 <body>
   <main>
@@ -189,7 +189,20 @@
       <p class="note">データはこのiPhoneの中だけに保存しています。</p>
 
       <p class="section-label">データ</p>
-      <button type="button" class="danger-button" id="clear-button">すべてのデータを削除</button>
+      <div class="settings-group">
+        <button type="button" class="settings-item" id="backup-export">
+          <span>バックアップを書き出す</span>
+          <span class="settings-sub">↑</span>
+        </button>
+        <button type="button" class="settings-item" id="backup-import">
+          <span>バックアップから読み込む</span>
+          <span class="settings-sub">↓</span>
+        </button>
+      </div>
+      <input type="file" id="backup-input" accept=".json,application/json" hidden>
+      <p class="note">機種変更のときや、パソコンとiPhoneの間でデータを移すときに使います。書き出したファイルには明細の内容が入っているので、人に渡さないでください。</p>
+      <p class="detail-message" id="backup-message" hidden></p>
+      <button type="button" class="danger-button" id="clear-button" style="margin-top: 0.75rem">すべてのデータを削除</button>
     </section>
 
     <!-- ===== 支払い元の設定(設定から開く) ===== -->
@@ -310,15 +323,16 @@
   </nav>
 
   <!-- 読み込む順番が大事:db.js と csv.js の関数を app.js で使う -->
-  <script src="js/update.js?v=2026110402"></script>
-  <script src="js/db.js?v=2026110402"></script>
-  <script src="js/csv.js?v=2026110402"></script>
-  <script src="js/image.js?v=2026110402"></script>
-  <script src="js/shops.js?v=2026110402"></script>
-  <script src="js/analysis.js?v=2026110402"></script>
-  <script src="js/viewer.js?v=2026110402"></script>
-  <script src="js/settings.js?v=2026110402"></script>
-  <script src="js/shopedit.js?v=2026110402"></script>
-  <script src="js/app.js?v=2026110402"></script>
+  <script src="js/update.js?v=2026110403"></script>
+  <script src="js/db.js?v=2026110403"></script>
+  <script src="js/csv.js?v=2026110403"></script>
+  <script src="js/image.js?v=2026110403"></script>
+  <script src="js/shops.js?v=2026110403"></script>
+  <script src="js/analysis.js?v=2026110403"></script>
+  <script src="js/viewer.js?v=2026110403"></script>
+  <script src="js/settings.js?v=2026110403"></script>
+  <script src="js/shopedit.js?v=2026110403"></script>
+  <script src="js/backup.js?v=2026110403"></script>
+  <script src="js/app.js?v=2026110403"></script>
 </body>
 </html>

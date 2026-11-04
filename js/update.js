@@ -12,7 +12,7 @@
 //   3. index.html の ?v=
 // =========================================================
 
-const APP_VERSION = "2026110402";
+const APP_VERSION = "2026110403";
 
 async function checkForUpdate() {
   try {
