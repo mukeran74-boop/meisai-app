@@ -276,9 +276,13 @@ function renderSubscriptions() {
 
     const body = document.createElement("div");
     body.className = "tx-body";
+    // 名前が長いときは名前の方を「…」で省略し、タグは必ず見せる
     const name = document.createElement("div");
-    name.className = "tx-name";
-    name.textContent = s.name;
+    name.className = "tx-name tx-name-row";
+    const nameText = document.createElement("span");
+    nameText.className = "tx-name-text";
+    nameText.textContent = s.name;
+    name.appendChild(nameText);
     const tag = document.createElement("span");
     tag.className = "custom-tag" + (s.registered ? "" : " is-warning");
     tag.textContent = s.registered ? "サブスク" : "サブスクかも";
@@ -287,14 +291,19 @@ function renderSubscriptions() {
     const sub = document.createElement("div");
     sub.className = "tx-sub";
     if (s.active) {
-      // 次に払う日の目安(最後に払った日の1か月後)
-      const next = addMonth(s.lastDate.slice(0, 7), 1);
-      sub.textContent =
-        "毎月" + s.day + "日ごろ・" + s.months + "か月続いている・次は" + Number(next.slice(5)) + "月" + s.day + "日ごろ";
+      sub.textContent = "毎月" + s.day + "日ごろ・" + s.months + "か月連続";
     } else {
       sub.textContent = "最近は支払いなし(最後は" + Number(s.lastDate.slice(5, 7)) + "/" + Number(s.lastDate.slice(8, 10)) + ")";
     }
     body.append(name, sub);
+    // 次に払う日の予想(最後に払った月の次の月)は2行目に分けて、読みやすくする
+    if (s.active) {
+      const next = addMonth(s.lastDate.slice(0, 7), 1);
+      const forecast = document.createElement("div");
+      forecast.className = "tx-sub";
+      forecast.textContent = "次の予想:" + Number(next.slice(5)) + "月" + s.day + "日ごろ";
+      body.appendChild(forecast);
+    }
 
     // 辞書でサブスクにしていないものは、その場で登録できるようにする
     if (!s.registered) {

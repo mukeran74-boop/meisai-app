@@ -1028,7 +1028,8 @@ main {
 }
 
 .tx-name-row .installment-tag,
-.tx-name-row .overseas-tag {
+.tx-name-row .overseas-tag,
+.tx-name-row .custom-tag {
   flex-shrink: 0;
   white-space: nowrap;
 }
