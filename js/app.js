@@ -325,7 +325,7 @@ function renderSubscriptions() {
 // 棒は div の高さを変えて描く(楽天カードとPayPayを積み上げる)
 function renderBarChart() {
   const pay = state.barMode === "pay";
-  const months = recentMonths(state.month, 6);
+  const months = recentMonths(barChartEndMonth(pay), 6);
   const data = pay ? monthlyPayments(months) : monthlyTotals(months);
 
   // 切り替えボタン・見出し・説明の文字
@@ -379,6 +379,24 @@ function renderBarChart() {
 
     chart.appendChild(col);
   });
+}
+
+// 棒グラフの右端の月を決める
+// ・ふだんは「データがある最後の月」を右端にして、6か月分を固定で出す(棒をタップしても並びは動かない)
+// ・選んだ月がその6か月より前なら、選んだ月が左端に来るようにずらす
+// ・選んだ月がデータより先なら、選んだ月を右端にする
+function barChartEndMonth(pay) {
+  let latest = null;
+  state.transactions.forEach(function (t) {
+    const list = pay ? paymentPortions(t).map(function (p) { return p.month; }) : [t.date.slice(0, 7)];
+    list.forEach(function (m) {
+      if (latest === null || m > latest) latest = m;
+    });
+  });
+  let end = latest || state.month;
+  if (state.month > end) end = state.month;
+  if (state.month < addMonth(end, -5)) end = addMonth(state.month, 5);
+  return end;
 }
 
 // 支払う月で見るときの、選んだ月の内訳(合計・支払い元ごと・分割払いの分)
