@@ -307,13 +307,116 @@ function detectSubscriptions() {
 // その月の取引から、文の型に当てはめたコメントを作る(大事な順)
 function analysisComments(month) {
   const list = transactionsOfMonth(month);
-  const comments = [];
-  if (list.length === 0) return comments;
+  if (list.length === 0) return [];
 
-  const shops = totalsByShop(list);
-  const total = shops.reduce(function (s, x) { return s + x.amount; }, 0);
+  // 大事な順に3つのグループに分けて集め、最後に上から4件だけ出す
+  const fraud = []; // 1. 不正利用に関わるもの(まだ確認していない支払いだけを見る)
+  const check = []; // 2. 確認の残り
+  const usage = []; // 3. 使い方に関わるもの
+  const unconfirmed = list.filter(function (t) { return t.status === "unconfirmed"; });
 
-  // 1. 一番多く使ったジャンルと、その中で一番多いお店
+  // 1-1. 海外での利用
+  const overseas = unconfirmed.filter(function (t) { return overseasCountry(t); });
+  if (overseas.length > 0) {
+    fraud.push("海外での利用が" + overseas.length + "件(" + yen(sum(overseas)) + ")あり、まだ確認していません。見覚えがあるか確認しましょう。");
+  }
+
+  // 1-2. 二重請求かも:同じ支払い元・同じお店・同じ日・同じ金額の支払いが2件以上
+  const groups = new Map();
+  list.forEach(function (t) {
+    if (t.amount <= 0) return;
+    const key = t.source + "|" + shopKeyOf(t) + "|" + t.date + "|" + t.amount;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(t);
+  });
+  // PayPayのように時刻が分かるときは、10分以内に続いたものだけを二重請求の候補にする
+  // (同じカフェで朝と夕方に同じ金額を払った、のような普通の支払いを外すため)
+  const minutes = function (t) {
+    const m = (t.time || "").match(/^(\d{1,2}):(\d{2})/);
+    return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+  };
+  const doubles = [];
+  groups.forEach(function (g) {
+    if (g.length < 2 || !g.some(function (t) { return t.status === "unconfirmed"; })) return;
+    const times = g.map(minutes);
+    if (times.some(function (x) { return x === null; })) {
+      doubles.push(g); // 時刻が分からない(楽天カード)ときは、同じ日なら候補
+      return;
+    }
+    times.sort(function (a, b) { return a - b; });
+    for (let i = 1; i < times.length; i++) {
+      if (times[i] - times[i - 1] <= 10) {
+        doubles.push(g);
+        return;
+      }
+    }
+  });
+  if (doubles.length > 0) {
+    const g = doubles[0];
+    const d = g[0].date.split("-").map(Number);
+    fraud.push(
+      "同じお店・同じ日・同じ金額の支払いが" + g.length + "件あります(" + d[1] + "/" + d[2] + " " + displayName(g[0]) + " " + yen(g[0].amount) + ")" +
+        (doubles.length > 1 ? "。ほかにも" + (doubles.length - 1) + "組あります" : "") +
+        "。二重に請求されていないか確認しましょう。"
+    );
+  }
+
+  // 1-3. 初めてのお店:この月より前に一度も使っていないお店(この月より前のデータがあるときだけ)
+  const hasEarlier = state.transactions.some(function (t) { return t.date.slice(0, 7) < month; });
+  if (hasEarlier) {
+    const firstMonth = new Map(); // お店 → 初めて使った月
+    state.transactions.forEach(function (t) {
+      const key = shopKeyOf(t);
+      const m = t.date.slice(0, 7);
+      if (!firstMonth.has(key) || m < firstMonth.get(key)) firstMonth.set(key, m);
+    });
+    const names = [];
+    unconfirmed.forEach(function (t) {
+      const name = displayName(t);
+      if (firstMonth.get(shopKeyOf(t)) === month && names.indexOf(name) === -1) names.push(name);
+    });
+    if (names.length > 0) {
+      fraud.push(
+        "この月に初めて使ったお店が" + names.length + "件あります(" + names.slice(0, 2).join("、") + (names.length > 2 ? "など" : "") + ")。見覚えがあるか確認しましょう。"
+      );
+    }
+  }
+
+  // 1-4. いつもより高い支払い:同じお店のほかの支払い(3件以上)の平均の3倍以上で、3,000円以上高いもの
+  let high = null;
+  unconfirmed.forEach(function (t) {
+    if (t.amount <= 0) return;
+    const key = shopKeyOf(t);
+    const others = state.transactions.filter(function (x) {
+      return x.id !== t.id && x.amount > 0 && shopKeyOf(x) === key;
+    });
+    if (others.length < 3) return;
+    const average = sum(others) / others.length;
+    const ratio = t.amount / average;
+    if (ratio >= 3 && t.amount - average >= 3000 && (!high || ratio > high.ratio)) {
+      high = { t: t, ratio: ratio, average: average };
+    }
+  });
+  if (high) {
+    const d = high.t.date.split("-").map(Number);
+    fraud.push(
+      displayName(high.t) + "で、いつもの約" + Math.round(high.ratio) + "倍の支払いがあります(" + d[1] + "/" + d[2] + " " + yen(high.t.amount) +
+        "、いつもは平均" + yen(Math.round(high.average)) + ")。見覚えがあるか確認しましょう。"
+    );
+  }
+
+  // 2-1. 未確認の残り
+  if (unconfirmed.length > 0) {
+    check.push("この月の未確認は" + unconfirmed.length + "件(" + yen(sum(unconfirmed)) + ")です。全部に目を通して、確認済みにしていきましょう。");
+  }
+
+  // 2-2. 辞書にないお店(見覚えのない支払いかもしれない)
+  const unknown = unconfirmed.filter(function (t) { return !findShop(t); });
+  if (unknown.length > 0) {
+    check.push("辞書にないお店の未確認の支払いが" + unknown.length + "件あります。見覚えがあるか確認しましょう。");
+  }
+
+  // 3-1. 一番多く使ったジャンルと、その中で一番多いお店
   const byCategory = totalsByCategory(list);
   if (byCategory.groups.length > 0 && byCategory.total > 0) {
     const top = byCategory.groups[0];
@@ -321,66 +424,52 @@ function analysisComments(month) {
     if (top.shops.length > 1) {
       text += "そのうち" + top.shops[0].percentInGroup + "%が" + top.shops[0].name + "です。";
     }
-    comments.push(text);
+    usage.push(text);
   }
 
-  // 1-2. 予算を超えた・超えそうなジャンル(80%以上)
-  budgetStatus(month).forEach(function (b) {
-    if (b.ratio > 1) {
-      comments.push("「" + b.name + "」が予算を" + yen(b.used - b.budget) + "超えています(" + yen(b.used) + " / 予算 " + yen(b.budget) + ")。");
-    } else if (b.ratio >= 0.8) {
-      comments.push("「" + b.name + "」が予算の" + Math.round(b.ratio * 100) + "%に達しています(" + yen(b.used) + " / 予算 " + yen(b.budget) + ")。");
-    }
-  });
-
-  // 1-3. 海外での利用(未確認のもの)
-  const overseas = list.filter(function (t) { return overseasCountry(t) && t.status === "unconfirmed"; });
-  if (overseas.length > 0) {
-    comments.push(
-      "海外での利用が" + overseas.length + "件(" + yen(sum(overseas)) + ")あり、まだ確認していません。見覚えがあるか確認しましょう。"
-    );
+  // 3-2. 予算を超えた・超えそうなジャンル(金額は上の予算の棒に出ているので、名前だけまとめる)
+  const budgets = budgetStatus(month);
+  const over = budgets.filter(function (b) { return b.ratio > 1; }).map(function (b) { return b.name; });
+  const near = budgets.filter(function (b) { return b.ratio >= 0.8 && b.ratio <= 1; }).map(function (b) { return b.name; });
+  if (over.length > 0) {
+    usage.push("予算を超えたジャンルが" + over.length + "つあります(" + over.join("・") + ")。");
+  } else if (near.length > 0) {
+    usage.push("予算の80%を超えたジャンルが" + near.length + "つあります(" + near.join("・") + ")。");
   }
 
-  // 2. 先月より一番増えたお店(1,000円以上増えたときだけ)
+  // 3-3. 先月より一番増えたお店(1,000円以上増えたときだけ。辞書にないお店は 2-2 で知らせるので比べない)
+  const shops = totalsByShop(list);
   const prevShops = totalsByShop(transactionsOfMonth(addMonth(month, -1)));
   const prevMap = new Map(prevShops.map(function (s) { return [s.key, s.amount]; }));
   let biggest = null;
   shops.forEach(function (s) {
-    // 辞書にないお店は、4つ目のコメント(見覚えの確認)で知らせるのでここでは比べない
     if (s.key.indexOf("raw:") === 0) return;
     const diff = s.amount - (prevMap.get(s.key) || 0);
     if (diff >= 1000 && (!biggest || diff > biggest.diff)) biggest = { name: s.name, diff: diff };
   });
   if (biggest && prevShops.length > 0) {
-    comments.push(biggest.name + "での支払いが先月より" + yen(biggest.diff) + "増えています。");
+    usage.push(biggest.name + "での支払いが先月より" + yen(biggest.diff) + "増えています。");
   }
 
-  // 3. サブスクの合計
-  const subscription = shops
-    .filter(function (s) { return s.category === "サブスク"; })
-    .reduce(function (sum, s) { return sum + s.amount; }, 0);
-  if (subscription > 0) {
-    comments.push("サブスクだけで" + yen(subscription) + "使っています。");
-  }
-
-  // 3-2. 辞書でサブスクにしていない、毎月の支払い
+  // 3-4. 辞書でサブスクにしていない、毎月の支払い
   const notRegistered = detectSubscriptions().filter(function (s) { return s.active && !s.registered; });
   if (notRegistered.length > 0) {
-    comments.push(
+    usage.push(
       "サブスクのような毎月の支払いが" + notRegistered.length + "件見つかりました(" +
         notRegistered.map(function (s) { return s.name; }).join("、") + ")。下の「毎月の支払い」で確認できます。"
     );
   }
 
-  // 4. 辞書にないお店(見覚えのない支払いかもしれない)
-  const unknown = list.filter(function (t) { return !findShop(t) && t.status === "unconfirmed"; });
-  if (unknown.length > 0) {
-    comments.push(
-      "辞書にないお店の未確認の支払いが" + unknown.length + "件あります。見覚えがあるか確認しましょう。"
-    );
-  }
+  return fraud.concat(check, usage).slice(0, MAX_COMMENTS);
+}
 
-  return comments;
+// コメントは多くても4件(多すぎると大事なものが埋もれるため)
+const MAX_COMMENTS = 4;
+
+// お店を見分ける目印(辞書にあれば辞書のお店、なければ明細の店名)。totalsByShop の key と同じ
+function shopKeyOf(t) {
+  const shop = findShop(t);
+  return shop ? shop.id : "raw:" + t.name;
 }
 
 // 金額を短く表示する(棒グラフの上の数字用) 69260 → "6.9万"、8500 → "8千"
