@@ -1277,13 +1277,16 @@ document.getElementById("detail-confirm").addEventListener("click", function () 
   saveTransaction(t, t.status === "confirmed" ? "確認済みにしました。" : "未確認に戻しました。");
 });
 
-// メモを保存(メモを書いたら確認済みにする)
+// メモを保存(メモを書いた・書き直したときだけ確認済みにする)
+// 中身を変えずに保存を押し直しただけなら、確認の状態はそのまま(「未確認に戻す」の直後でも戻らない)
 document.getElementById("memo-save").addEventListener("click", function () {
   const t = findTransaction(state.detailId);
   if (!t) return;
+  const before = t.memo || "";
   t.memo = document.getElementById("detail-memo").value.trim();
-  let message = "メモを保存しました。";
-  if (t.memo !== "" && t.status === "unconfirmed") {
+  const changed = t.memo !== before;
+  let message = changed ? "メモを保存しました。" : "メモは変わっていません。";
+  if (changed && t.memo !== "" && t.status === "unconfirmed") {
     t.status = "confirmed";
     message = "メモを保存し、確認済みにしました。";
   }
