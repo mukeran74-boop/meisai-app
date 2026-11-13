@@ -18,6 +18,7 @@ const state = {
   detailId: null, // 詳細画面で表示中の取引の id
   pieCategory: null, // 円グラフで選んでいるジャンル(なければ null)
   query: "", // 取引一覧の検索の言葉(空なら検索していない)
+  queryMonth: null, // 分析コメントから検索したときだけ、その月("2026-10")に絞る。自分で検索したときは null(全期間)
   photoIndex: 0, // 詳細画面で表示中の写真が何枚目か(0が1枚目)
   selectMode: false, // まとめて確認済みにするモード
   selected: new Set(), // まとめて確認するために選んだ取引の id
@@ -584,6 +585,7 @@ function runCommentAction(action) {
     const query = action.query || "";
     searchInput.value = query;
     state.query = query;
+    state.queryMonth = query === "" ? null : state.month; // コメントの月だけに絞る
     document.getElementById("search-clear").hidden = query === "";
     // 検索するときは全部の取引から探す。未確認のコメントのときは未確認だけにする
     state.onlyUnconfirmed = !!action.unconfirmed;
@@ -658,10 +660,14 @@ function renderHome() {
 
 // 取引一覧
 function renderList() {
-  // 検索しているときは、月に関係なく全期間から探す
+  // 自分で検索したときは、月に関係なく全期間から探す
+  // 分析コメントから開いたときは、コメントの月の取引だけにする(コメントの件数と合わせるため)
   const searching = state.query !== "";
   document.getElementById("screen-list").classList.toggle("is-searching", searching);
   let list = searching ? searchTransactions(state.query) : transactionsOfMonth(state.month);
+  if (searching && state.queryMonth) {
+    list = list.filter(function (t) { return t.date.slice(0, 7) === state.queryMonth; });
+  }
   if (state.source !== "all") {
     list = list.filter(function (t) { return t.source === state.source; });
   }
@@ -679,7 +685,8 @@ function renderList() {
 
   visibleList = list; // まとめて確認の「すべて選ぶ」で使う
   document.getElementById("list-total").textContent =
-    (searching ? "全期間から " : "") + list.length + "件・合計 " + yen(sum(list));
+    (searching ? (state.queryMonth ? monthLabel(state.queryMonth) + "から " : "全期間から ") : "") +
+    list.length + "件・合計 " + yen(sum(list));
 
   const ul = document.getElementById("tx-list");
   ul.innerHTML = "";
@@ -805,6 +812,7 @@ const searchInput = document.getElementById("search-input");
 
 searchInput.addEventListener("input", function () {
   state.query = searchInput.value.trim();
+  state.queryMonth = null; // 自分で入力したら全期間から探す
   document.getElementById("search-clear").hidden = state.query === "";
   renderList();
 });
@@ -812,6 +820,7 @@ searchInput.addEventListener("input", function () {
 document.getElementById("search-clear").addEventListener("click", function () {
   searchInput.value = "";
   state.query = "";
+  state.queryMonth = null;
   document.getElementById("search-clear").hidden = true;
   renderList();
 });
