@@ -782,6 +782,16 @@ main {
   font-size: 0.875rem;
 }
 
+/* 押すと取引一覧へ移動できるコメント */
+.comments li.is-link {
+  cursor: pointer;
+}
+
+.comments li.is-link::after {
+  content: " ›";
+  color: var(--text-sub);
+}
+
 .home-comment {
   display: block;
   width: 100%;

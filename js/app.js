@@ -556,21 +556,50 @@ function renderComments() {
 
   const ul = document.getElementById("graph-comments");
   ul.innerHTML = "";
-  comments.forEach(function (text) {
+  comments.forEach(function (c) {
     const li = document.createElement("li");
-    li.textContent = text;
+    li.textContent = c.text;
+    // 取引を見に行けるコメントは、タップでその取引の一覧へ
+    if (c.action) {
+      li.classList.add("is-link");
+      li.addEventListener("click", function () {
+        runCommentAction(c.action);
+      });
+    }
     ul.appendChild(li);
   });
 
   // ホーム画面には一番大事な1行だけ出す
   const home = document.getElementById("home-comment");
   home.hidden = comments.length === 0;
-  home.textContent = comments[0] || "";
+  home.textContent = comments[0] ? comments[0].text : "";
+  homeCommentAction = comments[0] ? comments[0].action : null;
 }
 
-// ホームの分析コメントを押したらグラフ画面へ
+let homeCommentAction = null; // ホームに出しているコメントを押したときの動き
+
+// コメントを押したときに、関係する取引の一覧を開く
+function runCommentAction(action) {
+  try {
+    const query = action.query || "";
+    searchInput.value = query;
+    state.query = query;
+    document.getElementById("search-clear").hidden = query === "";
+    // 検索するときは全部の取引から探す。未確認のコメントのときは未確認だけにする
+    state.onlyUnconfirmed = !!action.unconfirmed;
+    setSourceFilter("all");
+    showScreen("screen-list");
+  } catch (error) {
+    // うまく開けなくても、グラフ画面でコメントは読めるので止めない
+    console.warn("コメントから取引一覧を開けませんでした", error);
+    showScreen("screen-graph");
+  }
+}
+
+// ホームの分析コメントを押したら、取引を見に行けるものは取引一覧へ、それ以外はグラフ画面へ
 document.getElementById("home-comment").addEventListener("click", function () {
-  showScreen("screen-graph");
+  if (homeCommentAction) runCommentAction(homeCommentAction);
+  else showScreen("screen-graph");
 });
 
 // 月の表示(ホームと取引の両方)

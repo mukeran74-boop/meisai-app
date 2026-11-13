@@ -318,7 +318,10 @@ function analysisComments(month) {
   // 1-1. 海外での利用
   const overseas = unconfirmed.filter(function (t) { return overseasCountry(t); });
   if (overseas.length > 0) {
-    fraud.push("海外での利用が" + overseas.length + "件(" + yen(sum(overseas)) + ")あり、まだ確認していません。見覚えがあるか確認しましょう。");
+    fraud.push({
+      text: "海外での利用が" + overseas.length + "件(" + yen(sum(overseas)) + ")あり、まだ確認していません。見覚えがあるか確認しましょう。",
+      action: { query: "海外", unconfirmed: true }, // タップすると「海外」の未確認の取引一覧へ
+    });
   }
 
   // 1-2. 二重請求かも:同じ支払い元・同じお店・同じ日・同じ金額の支払いが2件以上
@@ -354,11 +357,13 @@ function analysisComments(month) {
   if (doubles.length > 0) {
     const g = doubles[0];
     const d = g[0].date.split("-").map(Number);
-    fraud.push(
-      "同じお店・同じ日・同じ金額の支払いが" + g.length + "件あります(" + d[1] + "/" + d[2] + " " + displayName(g[0]) + " " + yen(g[0].amount) + ")" +
+    fraud.push({
+      text:
+        "同じお店・同じ日・同じ金額の支払いが" + g.length + "件あります(" + d[1] + "/" + d[2] + " " + displayName(g[0]) + " " + yen(g[0].amount) + ")" +
         (doubles.length > 1 ? "。ほかにも" + (doubles.length - 1) + "組あります" : "") +
-        "。二重に請求されていないか確認しましょう。"
-    );
+        "。二重に請求されていないか確認しましょう。",
+      action: { query: displayName(g[0]) + " " + g[0].amount }, // そのお店・その金額で検索(確認済みの1件も並べて比べられるように)
+    });
   }
 
   // 1-3. 初めてのお店:この月より前に一度も使っていないお店(この月より前のデータがあるときだけ)
@@ -376,9 +381,11 @@ function analysisComments(month) {
       if (firstMonth.get(shopKeyOf(t)) === month && names.indexOf(name) === -1) names.push(name);
     });
     if (names.length > 0) {
-      fraud.push(
-        "この月に初めて使ったお店が" + names.length + "件あります(" + names.slice(0, 2).join("、") + (names.length > 2 ? "など" : "") + ")。見覚えがあるか確認しましょう。"
-      );
+      fraud.push({
+        text: "この月に初めて使ったお店が" + names.length + "件あります(" + names.slice(0, 2).join("、") + (names.length > 2 ? "など" : "") + ")。見覚えがあるか確認しましょう。",
+        // 1件ならそのお店で検索、2件以上なら未確認の一覧へ
+        action: names.length === 1 ? { query: names[0], unconfirmed: true } : { unconfirmed: true },
+      });
     }
   }
 
@@ -399,21 +406,29 @@ function analysisComments(month) {
   });
   if (high) {
     const d = high.t.date.split("-").map(Number);
-    fraud.push(
-      displayName(high.t) + "で、いつもの約" + Math.round(high.ratio) + "倍の支払いがあります(" + d[1] + "/" + d[2] + " " + yen(high.t.amount) +
-        "、いつもは平均" + yen(Math.round(high.average)) + ")。見覚えがあるか確認しましょう。"
-    );
+    fraud.push({
+      text:
+        displayName(high.t) + "で、いつもの約" + Math.round(high.ratio) + "倍の支払いがあります(" + d[1] + "/" + d[2] + " " + yen(high.t.amount) +
+        "、いつもは平均" + yen(Math.round(high.average)) + ")。見覚えがあるか確認しましょう。",
+      action: { query: displayName(high.t) + " " + high.t.amount, unconfirmed: true },
+    });
   }
 
   // 2-1. 未確認の残り
   if (unconfirmed.length > 0) {
-    check.push("この月の未確認は" + unconfirmed.length + "件(" + yen(sum(unconfirmed)) + ")です。全部に目を通して、確認済みにしていきましょう。");
+    check.push({
+      text: "この月の未確認は" + unconfirmed.length + "件(" + yen(sum(unconfirmed)) + ")です。全部に目を通して、確認済みにしていきましょう。",
+      action: { unconfirmed: true },
+    });
   }
 
   // 2-2. 辞書にないお店(見覚えのない支払いかもしれない)
   const unknown = unconfirmed.filter(function (t) { return !findShop(t); });
   if (unknown.length > 0) {
-    check.push("辞書にないお店の未確認の支払いが" + unknown.length + "件あります。見覚えがあるか確認しましょう。");
+    check.push({
+      text: "辞書にないお店の未確認の支払いが" + unknown.length + "件あります。見覚えがあるか確認しましょう。",
+      action: { unconfirmed: true },
+    });
   }
 
   // 3-1. 一番多く使ったジャンルと、その中で一番多いお店
@@ -460,7 +475,14 @@ function analysisComments(month) {
     );
   }
 
-  return fraud.concat(check, usage).slice(0, MAX_COMMENTS);
+  // どのコメントも { text, action } の形にそろえる
+  //  action.query       … その言葉で検索した取引一覧を開く
+  //  action.unconfirmed … 未確認だけにする(query と一緒なら、検索結果の未確認だけ)
+  //  action が null     … グラフ画面を開く(使い方のコメント)
+  return fraud
+    .concat(check, usage)
+    .map(function (c) { return typeof c === "string" ? { text: c, action: null } : c; })
+    .slice(0, MAX_COMMENTS);
 }
 
 // コメントは多くても4件(多すぎると大事なものが埋もれるため)
